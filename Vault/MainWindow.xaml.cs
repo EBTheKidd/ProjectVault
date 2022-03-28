@@ -40,8 +40,6 @@ namespace Vault
 
         private WaveOutEvent outputDevice;
         private AudioFileReader audioFile;
-        private BeatDataModel selectedBeat;
-        private SampleDataModel selectedSample;
         private BeatDataModel editBeat;
         public TagLib.IPicture artwork { get; set; }
         public static ObservableCollection<BeatDataModel> BeatDatas { get; set; } = new ObservableCollection<BeatDataModel>();
@@ -69,24 +67,36 @@ namespace Vault
             }
 
             // load initial data (libraries, etc...)
-            string[] beatFolders = Properties.Settings.Default.beatLibraryPath.Split(',');
-            foreach (string s in beatFolders)
+            if (Properties.Settings.Default.beatLibraryPath.Length > 5)
             {
-                beatFoldersList.Items.Add(new ListBoxItem()
+                string[] beatFolders = Properties.Settings.Default.beatLibraryPath.Split(',');
+                foreach (string s in beatFolders)
                 {
-                    Content = s
-                });
+                    if (s.Trim().Length > 0)
+                    {
+                        beatFoldersList.Items.Add(new ListBoxItem()
+                        {
+                            Content = s
+                        });
+                    }
+                }
+                Task.Run(async () => getBeats()); 
             }
-            string[] sampleFolders = Properties.Settings.Default.sampleLibraryPath.Split(',');
-            foreach (string s in sampleFolders)
+            if (Properties.Settings.Default.sampleLibraryPath.Length > 5)
             {
-                sampleFoldersList.Items.Add(new ListBoxItem()
+                string[] sampleFolders = Properties.Settings.Default.sampleLibraryPath.Split(',');
+                foreach (string s in sampleFolders)
                 {
-                    Content = s
-                });
+                    if (s.Trim().Length > 0)
+                    {
+                        sampleFoldersList.Items.Add(new ListBoxItem()
+                        {
+                            Content = s
+                        });
+                    }
+                }
+                Task.Run(async () => getSamples()); 
             }
-            Task.Run(async () => getBeats());
-            Task.Run(async () => getSamples());
 
             // Start data monitors (ram, cpu, now playing...)
             PerformanceCounter cpuCounter = new PerformanceCounter("Processor", "% Processor Time", "_Total");
@@ -95,7 +105,7 @@ namespace Vault
             {
                 // resources
                 long memKb;
-                long memUsed = (GC.GetTotalMemory(false) / 1024 / 1024);
+                long memUsed = GC.GetTotalMemory(false) / 1024 / 1024;
                 GetPhysicallyInstalledSystemMemory(out memKb);
                 memKb = (memKb / 1024);
                 ramUsageLabel.Content = "Ram Used: (" + memUsed + " MB /" + memKb + " MB)";
@@ -107,26 +117,16 @@ namespace Vault
                 cpuUsage.Maximum = 255;
 
                 // now playing
-                string foundBeatTitle = "";
-                string foundSampleTitle = "";
-                try
+                string foundBeatTitle = BeatDatas.Where(x => x.filePath.Equals(audioFile?.FileName)).FirstOrDefault().Title;
+                string foundSampleTitle = SampleDatas.Where(x => x.filePath.Equals(audioFile?.FileName)).FirstOrDefault().Title;
+                if (foundBeatTitle != null && foundBeatTitle.Length > 0)
                 {
-                    foundBeatTitle = BeatDatas.Where(x => x.filePath.Equals(audioFile?.FileName)).FirstOrDefault().Title;
-                    if (foundBeatTitle.Length > 0)
-                    {
-                        nowPlayingTitle.Content = foundBeatTitle;
-                    }
+                    nowPlayingTitle.Content = foundBeatTitle;
                 }
-                catch (Exception ee) { }
-                try
+                if (foundSampleTitle != null && foundSampleTitle.Length > 0)
                 {
-                    foundSampleTitle = SampleDatas.Where(x => x.filePath.Equals(audioFile?.FileName)).FirstOrDefault().Title;
-                    if (foundSampleTitle.Length > 0)
-                    {
-                        nowPlayingTitle.Content = foundSampleTitle;
-                    }
+                    nowPlayingTitle.Content = foundSampleTitle;
                 }
-                catch (Exception ee) { }
                 if (outputDevice?.PlaybackState == PlaybackState.Playing)
                 {
                     nowPlayingSlider.Value = double.Parse(audioFile?.Position + "");
@@ -173,7 +173,7 @@ namespace Vault
             await Dispatcher.BeginInvoke(new Action(() => {
                 sampleLoadingPanel.Visibility = Visibility.Visible;
             }));
-            string[] sampleFolders = Properties.Settings.Default.sampleLibraryPath.Split(',');
+            string[] sampleFolders = Properties.Settings.Default.sampleLibraryPath.Split(',').Where(x => x.Trim().Length > 0).ToArray();
             foreach (string s in sampleFolders)
             {
                 //Grabs all files from FileDirectory
@@ -224,7 +224,7 @@ namespace Vault
             await Dispatcher.BeginInvoke(new Action(() => {
                 beatLoadingPanel.Visibility = Visibility.Visible;
             }));
-            string[] beatFolders = Properties.Settings.Default.beatLibraryPath.Split(',');
+            string[] beatFolders = Properties.Settings.Default.beatLibraryPath.Split(',').Where(x => x.Trim().Length > 0).ToArray();
             foreach (string s in beatFolders)
             {
                 //Grabs all files from FileDirectory
@@ -382,11 +382,6 @@ namespace Vault
                 bool beatFile = playFilePath.Equals(BeatDatas.Where(x => x.filePath.Equals(playFilePath)).FirstOrDefault().filePath);
                 bool sampleFile = playFilePath.Equals(SampleDatas.Where(x => x.filePath.Equals(playFilePath)).FirstOrDefault().filePath);
 
-                outputDevice?.Dispose();
-                outputDevice = null;
-                audioFile?.Dispose();
-                audioFile = null;
-                outputDevice = new WaveOutEvent();
                 if (beatLibraryMenu.IsSelected)
                 {
                     if (beatDataTable.SelectedItem == null)
@@ -403,8 +398,13 @@ namespace Vault
                     }
                     playFilePath = ((SampleDataModel)sampleDataTable.SelectedItem).filePath;
                 }
-                if (playFilePath.Length > 0)
+                if (playFilePath.Length > 0 && playFilePath != audioFile?.FileName)
                 {
+                    outputDevice?.Dispose();
+                    outputDevice = null;
+                    audioFile?.Dispose();
+                    audioFile = null;
+                    outputDevice = new WaveOutEvent();
                     audioFile = new AudioFileReader(playFilePath);
                     outputDevice.Init(audioFile);
                 }

@@ -25,7 +25,7 @@ namespace Vault.Properties {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("C:\\Music\\BEATS")]
+        [global::System.Configuration.DefaultSettingValueAttribute("")]
         public string beatLibraryPath {
             get {
                 return ((string)(this["beatLibraryPath"]));
@@ -37,7 +37,7 @@ namespace Vault.Properties {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("C:\\Music\\SAMPLES")]
+        [global::System.Configuration.DefaultSettingValueAttribute("")]
         public string sampleLibraryPath {
             get {
                 return ((string)(this["sampleLibraryPath"]));

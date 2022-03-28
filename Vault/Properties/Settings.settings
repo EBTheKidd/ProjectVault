@@ -3,10 +3,10 @@
   <Profiles />
   <Settings>
     <Setting Name="beatLibraryPath" Type="System.String" Scope="User">
-      <Value Profile="(Default)">C:\Music\BEATS</Value>
+      <Value Profile="(Default)" />
     </Setting>
     <Setting Name="sampleLibraryPath" Type="System.String" Scope="User">
-      <Value Profile="(Default)">C:\Music\SAMPLES</Value>
+      <Value Profile="(Default)" />
     </Setting>
   </Settings>
 </SettingsFile>
