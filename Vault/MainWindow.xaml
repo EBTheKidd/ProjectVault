@@ -9,7 +9,7 @@
         mc:Ignorable="d"
         Title="Vault" 
         Height="600" MinHeight="600"
-        Width="900" MinWidth="900"
+        Width="1000" MinWidth="900"
         WindowStartupLocation="CenterScreen"
         ResizeMode="CanResizeWithGrip">
     <Grid >
@@ -20,6 +20,9 @@
         <Grid.RowDefinitions>
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
+        <ScrollViewer VerticalScrollBarVisibility="Hidden" HorizontalAlignment="Right">
+            <StackPanel hc:Growl.GrowlParent="True" VerticalAlignment="Top" Margin="0,10,10,10"/>
+        </ScrollViewer>
         <hc:SideMenu AutoSelect="True" Grid.Column="0" Grid.Row="0" BorderThickness="0" Width="150" VerticalAlignment="Stretch" x:Name="sideMenu" SelectionChanged="sideMenu_SelectionChanged">
             <hc:SideMenuItem Header="Home" x:Name="homeMenu" IsSelected="True">
                 <hc:SideMenuItem.Icon>
@@ -122,7 +125,28 @@
                 </Grid>
             </Border>
         </hc:Drawer>
-        
+        <hc:Drawer Grid.Column="1" Grid.RowSpan="2" Name="audioEditDrawer" MaskCanClose="True">
+            <Border Background="{DynamicResource RegionBrush}" Width="300" BorderThickness="0">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition/>
+                    </Grid.RowDefinitions>
+                    <TextBlock Margin="10,0,0,0" Text="Edit" Style="{StaticResource TextBlockTitle}" HorizontalAlignment="Left" x:Name="editBeatHeader"/>
+                    <Button Command="hc:ControlCommands.Close" Grid.Row="0" HorizontalAlignment="Right" Foreground="{DynamicResource PrimaryTextBrush}" Style="{StaticResource ButtonIcon}" hc:IconElement.Geometry="{StaticResource DeleteFillCircleGeometry}"/>
+
+                    <ScrollViewer Grid.Row="1" VerticalAlignment="Stretch" >
+                        <hc:UniformSpacingPanel Orientation="Vertical" Spacing="5" Margin="5">
+                            <hc:PropertyGrid x:Name="editProperties" ShowSortButton="True"/>
+                            <Image x:Name="editBeatImage" Width="100" Height="100"/>
+                            <Button Content="Browse Artwork" x:Name="editBeatBrowseImage" Click="audioEditBrowseImage_Click"/>
+                            <Button x:Name="saveBeatBtn" Content="Save" Click="saveAudioBtn_Click" Style="{StaticResource ButtonPrimary}"/>
+                        </hc:UniformSpacingPanel>
+                    </ScrollViewer>
+
+                </Grid>
+            </Border>
+        </hc:Drawer>
         <Grid Grid.Column="1" Grid.Row="0" x:Name="welcomeGrid" Visibility="Collapsed">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="Auto"/>
@@ -165,7 +189,7 @@
                                     <Button BorderThickness="0" Click="playBtn_Click">
                                         <fa:FontAwesomeIcon SolidIcon="Play" FontSize="15" Foreground="{DynamicResource DarkPrimaryBrush}"/>
                                     </Button>
-                                    <Button BorderThickness="0" Click="beatEditBtn_Click">
+                                    <Button BorderThickness="0" Click="audioEditBtn_Click">
                                         <fa:FontAwesomeIcon SolidIcon="Edit" FontSize="15" Foreground="{DynamicResource DarkPrimaryBrush}"/>
                                     </Button>
                                     <Button BorderThickness="0" Click="openFileFolderBtn_Click">
@@ -181,28 +205,6 @@
                     <DataGridTextColumn IsReadOnly="True" Width="100" CanUserResize="False" Binding="{Binding Bitrate}" Header="Birtate" />
                 </DataGrid.Columns>
             </DataGrid>
-            <hc:Drawer Grid.Column="1" Grid.Row="0" Grid.RowSpan="2" Name="beatEditDrawer" MaskCanClose="True">
-                <Border Background="{DynamicResource RegionBrush}" Width="300" BorderThickness="0">
-                    <Grid>
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition/>
-                        </Grid.RowDefinitions>
-                        <TextBlock Margin="10,0,0,0" Text="Edit" Style="{StaticResource TextBlockTitle}" HorizontalAlignment="Left" x:Name="editBeatHeader"/>
-                        <Button Command="hc:ControlCommands.Close" Grid.Row="0" HorizontalAlignment="Right" Foreground="{DynamicResource PrimaryTextBrush}" Style="{StaticResource ButtonIcon}" hc:IconElement.Geometry="{StaticResource DeleteFillCircleGeometry}"/>
-
-                        <ScrollViewer Grid.Row="1" VerticalAlignment="Stretch" >
-                            <hc:UniformSpacingPanel Orientation="Vertical" Spacing="5" Margin="5">
-                                <hc:PropertyGrid x:Name="editProperties" ShowSortButton="True"/>
-                                <Image x:Name="editBeatImage" Width="100" Height="100"/>
-                                <Button Content="Browse Artwork" x:Name="editBeatBrowseImage" Click="editBeatBrowseImage_Click"/>
-                                <Button x:Name="saveBeatBtn" Content="Save" Click="saveBeatBtn_Click" Style="{StaticResource ButtonPrimary}"/>
-                            </hc:UniformSpacingPanel>
-                        </ScrollViewer>
-
-                    </Grid>
-                </Border>
-            </hc:Drawer>
         </Grid>
         <Grid Grid.Column="1" Grid.Row="0" x:Name="beatPacksGrid" Visibility="Collapsed">
             <Grid.ColumnDefinitions>
@@ -214,6 +216,10 @@
                 <RowDefinition Height="*"/>
             </Grid.RowDefinitions>
             <Label Content="Beat Packs" FontSize="25" Foreground="{DynamicResource DarkPrimaryBrush}" BorderThickness="0" Background="{x:Null}"/>
+            <hc:UniformSpacingPanel Grid.Row="1" Grid.ColumnSpan="2" Orientation="Vertical" Margin="5" Spacing="5">
+                <Label BorderThickness="0" Background="{x:Null}" Content="Here you will be able to create beat packs (artwork, compressed, notes/details)"/>
+                <Label BorderThickness="0" Background="{x:Null}" Content="and send the packs to artists!"/>
+            </hc:UniformSpacingPanel>
         </Grid>
         <Grid Grid.Column="1" Grid.Row="0" x:Name="sampleLibraryGrid" Visibility="Collapsed">
             <Grid.ColumnDefinitions>
@@ -240,6 +246,9 @@
                                     <Button BorderThickness="0" Click="playBtn_Click">
                                         <fa:FontAwesomeIcon SolidIcon="Play" FontSize="15" Foreground="{DynamicResource DarkPrimaryBrush}"/>
                                     </Button>
+                                    <Button BorderThickness="0" Click="audioEditBtn_Click">
+                                        <fa:FontAwesomeIcon SolidIcon="Edit" FontSize="15" Foreground="{DynamicResource DarkPrimaryBrush}"/>
+                                    </Button>
                                     <Button BorderThickness="0" Click="openFileFolderBtn_Click">
                                         <fa:FontAwesomeIcon SolidIcon="FolderOpen" FontSize="15" Foreground="{DynamicResource DarkPrimaryBrush}"/>
                                     </Button>
@@ -247,7 +256,12 @@
                             </DataTemplate>
                         </DataGridTemplateColumn.CellTemplate>
                     </DataGridTemplateColumn>
-                    <DataGridTextColumn IsReadOnly="True" CanUserResize="False" Binding="{Binding Title}" Header="Title"/>
+                    <DataGridTextColumn IsReadOnly="True" MaxWidth="300" CanUserResize="False" Binding="{Binding Title}" Header="Title"/>
+                    <DataGridTextColumn IsReadOnly="True" CanUserResize="False" Binding="{Binding BPM}" Header="BPM"/>
+                    <DataGridTextColumn IsReadOnly="True" CanUserResize="False" Binding="{Binding Bitrate}" Header="Bitrate"/>
+                    <DataGridTextColumn IsReadOnly="True" CanUserResize="False" Binding="{Binding Duration}" Header="Duration"/>
+                    <DataGridTextColumn IsReadOnly="True" CanUserResize="False" Binding="{Binding Description}" Header="Description"/>
+                    <DataGridTextColumn IsReadOnly="True" CanUserResize="False" Binding="{Binding Artist}" Header="Artist"/>
                 </DataGrid.Columns>
             </DataGrid>
         </Grid>
@@ -261,7 +275,11 @@
                 <RowDefinition Height="*"/>
             </Grid.RowDefinitions>
             <Label Content="Sample Finder" FontSize="25" Foreground="{DynamicResource DarkPrimaryBrush}" BorderThickness="0" Background="{x:Null}"/>
-            
+            <hc:UniformSpacingPanel Grid.Row="1" Grid.ColumnSpan="2" Orientation="Vertical" Margin="5" Spacing="5">
+                <Label BorderThickness="0" Background="{x:Null}" Content="Here you will be able to find random samples!"/>
+                <Label BorderThickness="0" Background="{x:Null}" Content="(Source is currently undecided. Spotify and Youtube are the current contenders)"/>
+                <Label BorderThickness="0" Background="{x:Null}" Content="I liked this idea from Samplette so all idea credits to them!"/>
+            </hc:UniformSpacingPanel>
         </Grid>
         <Grid Grid.Column="1" Grid.Row="0" x:Name="marketingGrid" Visibility="Collapsed">
             <Grid.ColumnDefinitions>
@@ -284,40 +302,51 @@
                 <RowDefinition Height="*"/>
             </Grid.RowDefinitions>
             <Label Content="Settings" HorizontalContentAlignment="Left" FontSize="25" Foreground="{DynamicResource DarkPrimaryBrush}" BorderThickness="0" Background="{x:Null}"/>
-            <hc:UniformSpacingPanel Orientation="Vertical" Grid.Row="1" Grid.ColumnSpan="2" Spacing="5" Margin="5">
-                <hc:UniformSpacingPanel Orientation="Horizontal" Spacing="5">
-                    <hc:UniformSpacingPanel Orientation="Vertical" Spacing="5">
-                        <Label Content="Beat Library Folders" Width="200"/>
-                        <ListBox Height="100" x:Name="beatFoldersList"/>
-                        <hc:UniformSpacingPanel Orientation="Horizontal" Spacing="5">
-                            <Button Content="Add" Click="addBeatFolder_Click"/>
-                            <Button Content="Remove" Click="removeBeatFolder_Click"/>
+            <ScrollViewer Grid.Row="1" Grid.ColumnSpan="2">
+                <hc:UniformSpacingPanel Orientation="Vertical"  Spacing="5" Margin="5">
+                    <Expander Header="Beat/Sample Libraries" BorderThickness="1" BorderBrush="{DynamicResource BorderBrush}" IsExpanded="True" >
+                        <hc:UniformSpacingPanel Orientation="Horizontal" Spacing="5" Margin="5">
+                            <hc:UniformSpacingPanel Orientation="Vertical" Spacing="5">
+                                <Label Content="Beat Library Folders" Width="200"/>
+                                <ListBox Height="100" x:Name="beatFoldersList"/>
+                                <hc:UniformSpacingPanel Orientation="Horizontal" Spacing="5">
+                                    <Button Content="Add" Click="addBeatFolder_Click"/>
+                                    <Button Content="Remove" Click="removeBeatFolder_Click"/>
+                                </hc:UniformSpacingPanel>
+                            </hc:UniformSpacingPanel>
+                            <hc:UniformSpacingPanel Orientation="Vertical" Spacing="5">
+                                <Label Content="Sample Library Folders" Width="200"/>
+                                <ListBox Height="100" x:Name="sampleFoldersList"/>
+                                <hc:UniformSpacingPanel Orientation="Horizontal" Spacing="5">
+                                    <Button Content="Add" Click="addSampleFolder_Click"/>
+                                    <Button Content="Remove" Click="removeSampleFolder_Click"/>
+                                </hc:UniformSpacingPanel>
+                            </hc:UniformSpacingPanel>
+                            <hc:UniformSpacingPanel Orientation="Vertical" Spacing="5">
+                                <hc:UniformSpacingPanel Orientation="Horizontal" Spacing="5" IsEnabled="False">
+                                    <ToggleButton Style="{StaticResource ToggleButtonSwitch}"/>
+                                    <Label Content="Public Sample Library" BorderThickness="0" Background="{x:Null}" />
+                                </hc:UniformSpacingPanel>
+                                <Button Content="Reload Libraries" Click="reloadLibraries_Click"/>
+                            </hc:UniformSpacingPanel>
                         </hc:UniformSpacingPanel>
-                    </hc:UniformSpacingPanel>
-                    <hc:UniformSpacingPanel Orientation="Vertical" Spacing="5">
-                        <Label Content="Sample Library Folders" Width="200"/>
-                        <ListBox Height="100" x:Name="sampleFoldersList"/>
-                        <hc:UniformSpacingPanel Orientation="Horizontal" Spacing="5">
-                            <Button Content="Add" Click="addSampleFolder_Click"/>
-                            <Button Content="Remove" Click="removeSampleFolder_Click"/>
+                    </Expander>
+                    <Expander Header="Style/Theme" BorderThickness="1" BorderBrush="{DynamicResource BorderBrush}" IsExpanded="True">
+                        <hc:UniformSpacingPanel Orientation="Vertical" Spacing="5" Margin="5">
+                            <hc:ButtonGroup >
+                                <RadioButton Content="Light" x:Name="lightThemeBtn" Click="themeBtn_Click" />
+                                <RadioButton Content="Dark" x:Name="darkThemeBtn" Click="themeBtn_Click" />
+                                <RadioButton Content="Mica" x:Name="micaThemeBtn" Click="themeBtn_Click" />
+                            </hc:ButtonGroup>
+                            <hc:UniformSpacingPanel Orientation="Horizontal" Spacing="5">
+                                <Button x:Name="accentColorSelector" Click="accentColorSelector_Click" Content="Change Accent Color" HorizontalAlignment="Left" Width="175" />
+                                <Button x:Name="accentColorReset" Click="accentColorReset_Click" Content="Reset" HorizontalAlignment="Left" Width="60" Style="{StaticResource ButtonDanger}"/>
+                            </hc:UniformSpacingPanel>
                         </hc:UniformSpacingPanel>
-                    </hc:UniformSpacingPanel>
-                    <hc:UniformSpacingPanel Orientation="Vertical" Spacing="5">
-                        <hc:UniformSpacingPanel Orientation="Horizontal" Spacing="5">
-                            <ToggleButton Style="{StaticResource ToggleButtonSwitch}"/>
-                            <Label Content="Public Sample Library" BorderThickness="0" Background="{x:Null}"/>
-                        </hc:UniformSpacingPanel>
-                        <hc:UniformSpacingPanel Orientation="Horizontal" Spacing="5">
-                            <ToggleButton Style="{StaticResource ToggleButtonSwitch}"/>
-                            <Label Content="Auto-update" BorderThickness="0" Background="{x:Null}"/>
-                        </hc:UniformSpacingPanel>
-                        <Button Content="Save Settings" x:Name="saveSettingsBtn" Click="saveSettingsBtn_Click"/>
-                        <Button Content="Reload Libraries" Click="reloadLibraries_Click"/>
-                    </hc:UniformSpacingPanel>
+                    </Expander>
                 </hc:UniformSpacingPanel>
-                
-
-            </hc:UniformSpacingPanel>
+            </ScrollViewer>
+            
             <hc:UniformSpacingPanel Orientation="Vertical" Grid.Row="1" Grid.ColumnSpan="2" Margin="5" VerticalAlignment="Bottom">
                 <StackPanel Orientation="Horizontal" x:Name="beatLoadingPanel">
                     <ProgressBar x:Name="beatLibraryLoading" Width="300"/>

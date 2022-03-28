@@ -24,6 +24,8 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 using System.Windows.Shell;
+using Application = System.Windows.Application;
+using Button = System.Windows.Controls.Button;
 
 namespace Vault
 {
@@ -37,13 +39,12 @@ namespace Vault
         [DllImport("kernel32.dll")]
         [return: MarshalAs(UnmanagedType.Bool)]
         static extern bool GetPhysicallyInstalledSystemMemory(out long TotalMemoryInKilobytes);
-
+        public TagLib.IPicture artwork { get; set; }
         private WaveOutEvent outputDevice;
         private AudioFileReader audioFile;
-        private BeatDataModel editBeat;
-        public TagLib.IPicture artwork { get; set; }
-        public static ObservableCollection<BeatDataModel> BeatDatas { get; set; } = new ObservableCollection<BeatDataModel>();
-        public static ObservableCollection<SampleDataModel> SampleDatas { get; set; } = new ObservableCollection<SampleDataModel>();
+        private AudioDataModel editAudio;
+        public static ObservableCollection<AudioDataModel> BeatDatas { get; set; } = new ObservableCollection<AudioDataModel>();
+        public static ObservableCollection<AudioDataModel> SampleDatas { get; set; } = new ObservableCollection<AudioDataModel>();
         public MainWindow()
         {
             // Init window & components
@@ -57,14 +58,7 @@ namespace Vault
             };
             WindowChrome.SetWindowChrome(this, chrome);
             InitializeComponent();
-            ThemeManager.Current.ApplicationTheme = ApplicationTheme.Dark;
-            System.Windows.Application.Current.MainWindow?.OnApplyTemplate();
-            if (OSVersionHelper.IsWindows11_OrGreater) // apply mica for windows 11 :)
-            {
-                this.Background = Brushes.Transparent;
-                ThemeResources.Current.UsingSystemTheme = true;
-                MicaHelper.ApplyMicaEffect(System.Windows.Application.Current.MainWindow.GetHandle(), true);
-            }
+            updateTheme();
 
             // load initial data (libraries, etc...)
             if (Properties.Settings.Default.beatLibraryPath.Length > 5)
@@ -143,7 +137,7 @@ namespace Vault
             dispatcherTimer.Start();
             welcomeGrid.Visibility = Visibility.Visible;
         }
-        public struct BeatDataModel
+        public struct AudioDataModel
         {
             [Category("Metadata")]
             public string Title { get; set; }
@@ -163,10 +157,68 @@ namespace Vault
             [Category("Metadata"), ReadOnly(true)]
             public string Description { get; set; }
         }
-        public struct SampleDataModel
+
+        #region Global
+        public void updateTheme()
         {
-            public string Title { get; set; }
-            public string filePath { get; set; }
+            accentColorReset.IsEnabled = true;
+            accentColorSelector.IsEnabled = true;
+            SolidColorBrush mySolidColorBrush = new SolidColorBrush();
+            SolidColorBrush mySolidColorBrush2 = new SolidColorBrush();
+            if (Properties.Settings.Default.Theme == "Light")
+            {
+                ThemeManager.Current.ApplicationTheme = ApplicationTheme.Light;
+                mySolidColorBrush.Color = Color.FromArgb(255, 255, 255, 255);
+                mySolidColorBrush2.Color = Color.FromArgb(255, 0, 0, 0);
+                lightThemeBtn.IsChecked = true;
+                this.Background = mySolidColorBrush;
+            }
+            else if (Properties.Settings.Default.Theme == "Dark")
+            {
+                ThemeManager.Current.ApplicationTheme = ApplicationTheme.Dark;
+                mySolidColorBrush.Color = Color.FromArgb(255, 28, 28, 28);
+                mySolidColorBrush2.Color = Color.FromArgb(255, 255, 255, 255);
+                darkThemeBtn.IsChecked = true;
+                this.Background = mySolidColorBrush;
+            }
+            
+            if(Properties.Settings.Default.Theme == "Mica")
+            {
+                ThemeManager.Current.ApplicationTheme = ApplicationTheme.Dark;
+                mySolidColorBrush.Color = Color.FromArgb(255, 28, 28, 28);
+                mySolidColorBrush2.Color = Color.FromArgb(255, 255, 255, 255);
+                if (OSVersionHelper.IsWindows11_OrGreater) // apply mica for windows 11 :)
+                {
+                    this.Background = Brushes.Transparent;
+                    ThemeResources.Current.UsingSystemTheme = true;
+                    MicaHelper.ApplyMicaEffect(System.Windows.Application.Current.MainWindow.GetHandle(), true);
+                    micaThemeBtn.IsChecked = true;
+                    accentColorReset.IsEnabled = false;
+                    accentColorSelector.IsEnabled = false;
+
+                } else
+                {
+                    HandyControl.Controls.Growl.ErrorGlobal("You must be running Windows 11 to enable Mica!");
+                    mySolidColorBrush.Color = Color.FromArgb(255, 28, 28, 28);
+                    mySolidColorBrush2.Color = Color.FromArgb(255, 255, 255, 255);
+                    darkThemeBtn.IsChecked = true;
+                    this.Background = mySolidColorBrush;
+                }
+            }
+            System.Windows.Application.Current.MainWindow?.OnApplyTemplate();
+
+            try
+            {
+                if (!Properties.Settings.Default.AccentColor.IsEmpty && Properties.Settings.Default.Theme != "Mica")
+                {
+                    System.Windows.Media.Color primary = System.Windows.Media.Color.FromArgb(Properties.Settings.Default.AccentColor.A, Properties.Settings.Default.AccentColor.R, Properties.Settings.Default.AccentColor.G, Properties.Settings.Default.AccentColor.B);
+                    SolidColorBrush primaryColorBrush = new SolidColorBrush();
+                    primaryColorBrush.Color = primary;
+                    System.Windows.Application.Current.Resources["DarkPrimaryBrush"] = primaryColorBrush;
+                    System.Windows.Application.Current.Resources["PrimaryBrush"] = primaryColorBrush;
+                }
+            }
+            catch (Exception e) { }
         }
         public async void getSamples()
         {
@@ -195,10 +247,32 @@ namespace Vault
                     {
                         try
                         {
-                            SampleDataModel b = new SampleDataModel
+                            var tfile = TagLib.File.Create(files[i]);
+                            string title = tfile.Tag.Title;
+                            if (title == null || title.Length == 0)
                             {
-                                Title = System.IO.Path.GetFileNameWithoutExtension(files[i]),
-                                filePath = files[i]
+                                title = System.IO.Path.GetFileNameWithoutExtension(files[i]);
+                            }
+
+                            string[] artist = new string[1];
+                            if (tfile.Tag.AlbumArtists == null)
+                            {
+                                artist[0] = "N/A";
+                            }
+                            else
+                            {
+                                artist = tfile.Tag.AlbumArtists;
+                            }
+                            AudioDataModel b = new AudioDataModel
+                            {
+                                Title = title,
+                                Artist = String.Join(",", artist),
+                                Album = tfile.Tag.Album,
+                                filePath = files[i],
+                                Bitrate = (string.Format("{0} Kbps", (int)tfile.Properties.AudioBitrate)),
+                                Description = (tfile.Properties.Description),
+                                BPM = (tfile.Tag.BeatsPerMinute),
+                                Duration = (string.Format("{0}:{1:00}", (int)tfile.Properties.Duration.TotalMinutes, tfile.Properties.Duration.Seconds))
                             };
                             await Dispatcher.BeginInvoke(new Action(() => {
                                 if (!SampleDatas.Contains(b))
@@ -259,7 +333,7 @@ namespace Vault
                         {
                             artist = tfile.Tag.AlbumArtists;
                         }
-                        BeatDataModel b = new BeatDataModel
+                        AudioDataModel b = new AudioDataModel
                         {
                             Title = title,
                             Artist = String.Join(",", artist),
@@ -329,7 +403,7 @@ namespace Vault
             {
                 if (beatDataTable.SelectedItem != null)
                 {
-                    var beat = (BeatDataModel)beatDataTable.SelectedItem;
+                    var beat = (AudioDataModel)beatDataTable.SelectedItem;
                     string argument = "/select, \"" + beat.filePath + "\"";
                     System.Diagnostics.Process.Start("explorer.exe", argument);
                 }
@@ -338,7 +412,7 @@ namespace Vault
             {
                 if (sampleDataTable.SelectedItem != null)
                 {
-                    var sample = (SampleDataModel)sampleDataTable.SelectedItem;
+                    var sample = (AudioDataModel)sampleDataTable.SelectedItem;
                     string argument = "/select, \"" + sample.filePath + "\"";
                     System.Diagnostics.Process.Start("explorer.exe", argument);
                 }
@@ -355,7 +429,7 @@ namespace Vault
                     {
                         beatDataTable.SelectedIndex = 0;
                     }
-                    playFilePath = ((BeatDataModel)beatDataTable.SelectedItem).filePath;
+                    playFilePath = ((AudioDataModel)beatDataTable.SelectedItem).filePath;
                 }
                 else if (sampleLibraryMenu.IsSelected)
                 {
@@ -363,7 +437,7 @@ namespace Vault
                     {
                         sampleDataTable.SelectedIndex = 0;
                     }
-                    playFilePath = ((SampleDataModel)sampleDataTable.SelectedItem).filePath;
+                    playFilePath = ((AudioDataModel)sampleDataTable.SelectedItem).filePath;
                 }
                 if (playFilePath.Length > 0)
                 {
@@ -411,7 +485,7 @@ namespace Vault
                     {
                         beatDataTable.SelectedIndex = 0;
                     }
-                    playFilePath = ((BeatDataModel)beatDataTable.SelectedItem).filePath;
+                    playFilePath = ((AudioDataModel)beatDataTable.SelectedItem).filePath;
                 }
                 else if (sampleLibraryMenu.IsSelected)
                 {
@@ -419,7 +493,7 @@ namespace Vault
                     {
                         sampleDataTable.SelectedIndex = 0;
                     }
-                    playFilePath = ((SampleDataModel)sampleDataTable.SelectedItem).filePath;
+                    playFilePath = ((AudioDataModel)sampleDataTable.SelectedItem).filePath;
                 }
                 if (playFilePath.Length > 0 && playFilePath != audioFile?.FileName)
                 {
@@ -471,7 +545,130 @@ namespace Vault
                 outputDevice.Play();
             }
         }
+        private void saveAudioBtn_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                if (((AudioDataModel)editProperties.SelectedObject).filePath != null)
+                {
+                    var tfile = TagLib.File.Create(((AudioDataModel)editProperties.SelectedObject).filePath);
+                    tfile.Tag.Title = ((AudioDataModel)editProperties.SelectedObject).Title;
+                    tfile.Tag.AlbumArtists = ((AudioDataModel)editProperties.SelectedObject).Artist.Split(',');
+                    tfile.Tag.Album = ((AudioDataModel)editProperties.SelectedObject).Album;
+                    if (artwork != null)
+                    {
+                        tfile.Tag.Pictures = new TagLib.IPicture[1] { artwork };
+                    }
+                    tfile.Save();
+                    artwork = null;
+                    audioEditDrawer.IsOpen = false;
+                    string title = tfile.Tag.Title;
+                    if (title == null || title.Length == 0)
+                    {
+                        title = System.IO.Path.GetFileNameWithoutExtension(((AudioDataModel)editProperties.SelectedObject).filePath);
+                    }
+                    string[] artists = tfile.Tag.AlbumArtists;
+                    string album = tfile.Tag.Album;
+                    double bpm = tfile.Tag.BeatsPerMinute;
+                    string duration = string.Format("{0}:{1:00}", (int)tfile.Properties.Duration.TotalMinutes, tfile.Properties.Duration.Seconds);
+                    AudioDataModel b = new AudioDataModel
+                    {
+                        Title = title,
+                        Artist = artists[0],
+                        Album = album,
+                        filePath = ((AudioDataModel)editProperties.SelectedObject).filePath,
+                        Bitrate = (string.Format("{0} Kbps", (int)tfile.Properties.AudioBitrate)),
+                        Description = (tfile.Properties.Description),
+                        BPM = (tfile.Tag.BeatsPerMinute),
+                        Duration = (string.Format("{0}:{1:00}", (int)tfile.Properties.Duration.TotalMinutes, tfile.Properties.Duration.Seconds))
+                    };
+                    if (beatLibraryMenu.IsSelected)
+                    {
+                        BeatDatas.Remove(editAudio);
+                        if (!BeatDatas.Contains(b))
+                        {
+                            BeatDatas.Add(b);
+                            beatDataTable.SelectedItem = b;
+                            beatDataTable.ScrollIntoView(b);
+                        }
+                    }
+                    else if (sampleLibraryMenu.IsSelected)
+                    {
+                        SampleDatas.Remove(editAudio);
+                        if (!SampleDatas.Contains(b))
+                        {
+                            SampleDatas.Add(b);
+                            sampleDataTable.SelectedItem = b;
+                            sampleDataTable.ScrollIntoView(b);
+                        }
+                    }
+                }
+            }
+            catch (Exception ee)
+            {
+                HandyControl.Controls.MessageBox.Show("There was an issue saving the file data.\n\nPlease make sure the file is not loaded/playing and please try again!", "Error Saving File", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+        private void audioEditBtn_Click(object sender, RoutedEventArgs e)
+        {
+            if (beatLibraryMenu.IsSelected)
+            {
+                if (beatDataTable.SelectedItem != null)
+                {
+                    editAudio = (AudioDataModel)beatDataTable.SelectedItem;
+                }
+            }
+            
+            if (sampleLibraryMenu.IsSelected)
+            {
+                if (sampleDataTable.SelectedItem != null)
+                {
+                    editAudio = (AudioDataModel)sampleDataTable.SelectedItem;
+                }
+            }
 
+            editProperties.SelectedObject = editAudio;
+            editBeatHeader.Text = editAudio.Title;
+            audioEditDrawer.IsOpen = !audioEditDrawer.IsOpen;
+            var tfile = TagLib.File.Create(editAudio.filePath);
+            try
+            {
+                var artwork = tfile.Tag.Pictures[0];
+                MemoryStream ms = new MemoryStream(artwork.Data.Data);
+                ms.Seek(0, SeekOrigin.Begin);
+                BitmapImage bitmap = new BitmapImage();
+                bitmap.BeginInit();
+                bitmap.StreamSource = ms;
+                bitmap.EndInit();
+                editBeatImage.Source = bitmap;
+            }
+            catch (Exception ee)
+            {
+                Console.WriteLine("no image");
+            }
+        }
+        private void audioEditBrowseImage_Click(object sender, RoutedEventArgs e)
+        {
+            // open file dialog   
+            Microsoft.Win32.OpenFileDialog open = new Microsoft.Win32.OpenFileDialog();
+            // image filters  
+            open.Filter = "Image Files(*.jpg; *.jpeg)|*.jpg; *.jpeg";
+            if (open.ShowDialog().Value == true)
+            {
+                // display image in picture box
+                var uri = new Uri(open.FileName);
+                editBeatImage.Source = new BitmapImage(uri);
+                TagLib.Picture picture = new TagLib.Picture(open.FileName);
+                TagLib.Id3v2.AttachedPictureFrame albumCoverPictFrame = new TagLib.Id3v2.AttachedPictureFrame(picture);
+                albumCoverPictFrame.MimeType = System.Net.Mime.MediaTypeNames.Image.Jpeg;
+                albumCoverPictFrame.Type = TagLib.PictureType.FrontCover;
+                TagLib.IPicture[] pictFrames = new TagLib.IPicture[1];
+                pictFrames[0] = (TagLib.IPicture)albumCoverPictFrame;
+                var test = (AudioDataModel)editProperties.SelectedObject;
+                artwork = (TagLib.IPicture)albumCoverPictFrame;
+            }
+        }
+        #endregion
         #region Now Playing 
         private void nowPlayingBtn_Click(object sender, RoutedEventArgs e)
         {
@@ -507,104 +704,6 @@ namespace Vault
         }
         #endregion
         #region Beat Library
-        private void beatEditBtn_Click(object sender, RoutedEventArgs e)
-        {
-            if (beatDataTable.SelectedItem != null)
-            {
-                editBeat = (BeatDataModel)beatDataTable.SelectedItem;
-                editProperties.SelectedObject = (BeatDataModel)beatDataTable.SelectedItem;
-                editBeatHeader.Text = ((BeatDataModel)editProperties.SelectedObject).Title;
-                beatEditDrawer.IsOpen = !beatEditDrawer.IsOpen;
-                var tfile = TagLib.File.Create(((BeatDataModel)editProperties.SelectedObject).filePath);
-                try
-                {
-                    var artwork = tfile.Tag.Pictures[0];
-                    MemoryStream ms = new MemoryStream(artwork.Data.Data);
-                    ms.Seek(0, SeekOrigin.Begin);
-                    BitmapImage bitmap = new BitmapImage();
-                    bitmap.BeginInit();
-                    bitmap.StreamSource = ms;
-                    bitmap.EndInit();
-                    editBeatImage.Source = bitmap;
-                }
-                catch (Exception ee)
-                {
-                    Console.WriteLine("no image");
-                }
-            }
-        }
-        private void editBeatBrowseImage_Click(object sender, RoutedEventArgs e)
-        {
-            // open file dialog   
-            Microsoft.Win32.OpenFileDialog open = new Microsoft.Win32.OpenFileDialog();
-            // image filters  
-            open.Filter = "Image Files(*.jpg; *.jpeg)|*.jpg; *.jpeg";
-            if (open.ShowDialog().Value == true)
-            {
-                // display image in picture box
-                var uri = new Uri(open.FileName);
-                editBeatImage.Source = new BitmapImage(uri);
-                TagLib.Picture picture = new TagLib.Picture(open.FileName);
-                TagLib.Id3v2.AttachedPictureFrame albumCoverPictFrame = new TagLib.Id3v2.AttachedPictureFrame(picture);
-                albumCoverPictFrame.MimeType = System.Net.Mime.MediaTypeNames.Image.Jpeg;
-                albumCoverPictFrame.Type = TagLib.PictureType.FrontCover;
-                TagLib.IPicture[] pictFrames = new TagLib.IPicture[1];
-                pictFrames[0] = (TagLib.IPicture)albumCoverPictFrame;
-                var test = (BeatDataModel)editProperties.SelectedObject;
-                artwork = (TagLib.IPicture)albumCoverPictFrame;
-            }
-        }
-        private void saveBeatBtn_Click(object sender, RoutedEventArgs e)
-        {
-            try
-            {
-                if (((BeatDataModel)editProperties.SelectedObject).filePath != null)
-                {
-                    var tfile = TagLib.File.Create(((BeatDataModel)editProperties.SelectedObject).filePath);
-                    tfile.Tag.Title = ((BeatDataModel)editProperties.SelectedObject).Title;
-                    tfile.Tag.AlbumArtists = ((BeatDataModel)editProperties.SelectedObject).Artist.Split(',');
-                    tfile.Tag.Album = ((BeatDataModel)editProperties.SelectedObject).Album;
-                    if (artwork != null)
-                    {
-                        tfile.Tag.Pictures = new TagLib.IPicture[1] { artwork };
-                    }
-                    tfile.Save();
-                    artwork = null;
-                    beatEditDrawer.IsOpen = false;
-                    string title = tfile.Tag.Title;
-                    if (title == null || title.Length == 0)
-                    {
-                        title = System.IO.Path.GetFileNameWithoutExtension(((BeatDataModel)editProperties.SelectedObject).filePath);
-                    }
-                    string[] artists = tfile.Tag.AlbumArtists;
-                    string album = tfile.Tag.Album;
-                    double bpm = tfile.Tag.BeatsPerMinute;
-                    string duration = string.Format("{0}:{1:00}", (int)tfile.Properties.Duration.TotalMinutes, tfile.Properties.Duration.Seconds);
-                    BeatDataModel b = new BeatDataModel
-                    {
-                        Title = title,
-                        Artist = artists[0],
-                        Album = album,
-                        filePath = ((BeatDataModel)editProperties.SelectedObject).filePath,
-                        Bitrate = (string.Format("{0} Kbps", (int)tfile.Properties.AudioBitrate)),
-                        Description = (tfile.Properties.Description),
-                        BPM = (tfile.Tag.BeatsPerMinute),
-                        Duration = (string.Format("{0}:{1:00}", (int)tfile.Properties.Duration.TotalMinutes, tfile.Properties.Duration.Seconds))
-                    };
-                    BeatDatas.Remove(editBeat);
-                    if (!BeatDatas.Contains(b))
-                    {
-                        BeatDatas.Add(b);
-                        beatDataTable.SelectedItem = b;
-                        beatDataTable.ScrollIntoView(b);
-                    }
-                }
-            }
-            catch (Exception ee)
-            {
-                HandyControl.Controls.MessageBox.Show("There was an issue saving the file data.\n\nPlease make sure the file is not loaded/playing and please try again!", "Error Saving File", MessageBoxButton.OK, MessageBoxImage.Error);
-            }
-        }
         private void beatSearch_TextChanged(object sender, TextChangedEventArgs e)
         {
             var sb = (HandyControl.Controls.SearchBar)sender;
@@ -635,6 +734,67 @@ namespace Vault
         }
         #endregion
         #region Settings
+        private void accentColorSelector_Click(object sender, RoutedEventArgs e)
+        {
+            System.Windows.Media.Color primaryOld = System.Windows.Media.Color.FromArgb(Properties.Settings.Default.AccentColor.A, Properties.Settings.Default.AccentColor.R, Properties.Settings.Default.AccentColor.G, Properties.Settings.Default.AccentColor.B);
+            Button thisbtn = (Button)sender;
+            var picker = SingleOpenHelper.CreateControl<HandyControl.Controls.ColorPicker>();
+            var window = new HandyControl.Controls.PopupWindow { PopupElement = picker };
+            picker.SelectedColorChanged += delegate {
+                Application.Current.Resources["DarkPrimaryBrush"] = picker.SelectedBrush;
+                Application.Current.Resources["PrimaryBrush"] = picker.SelectedBrush;
+                Application.Current.Resources["DarkAccentBrush"] = picker.SelectedBrush;
+                Application.Current.Resources["AccentBrush"] = picker.SelectedBrush;
+                Application.Current.Resources["AccentColor"] = primaryOld;
+
+            };
+            picker.Confirmed += delegate {
+                window.Close();
+
+                System.Drawing.Color primary = System.Drawing.Color.FromArgb(picker.SelectedBrush.Color.A, picker.SelectedBrush.Color.R, picker.SelectedBrush.Color.G, picker.SelectedBrush.Color.B);
+                Properties.Settings.Default.AccentColor = primary;
+                Properties.Settings.Default.Save();
+            };
+            picker.Canceled += delegate {
+                window.Close();
+                System.Drawing.Color defaultColor = System.Drawing.Color.FromArgb(primaryOld.A, primaryOld.R, primaryOld.G, primaryOld.B);
+                Properties.Settings.Default.AccentColor = defaultColor;
+                Properties.Settings.Default.Save();
+                SolidColorBrush primaryColorBrush = new SolidColorBrush();
+                primaryColorBrush.Color = primaryOld;
+                Application.Current.Resources["DarkPrimaryBrush"] = primaryColorBrush;
+                Application.Current.Resources["PrimaryBrush"] = primaryColorBrush;
+            };
+            window.Show(thisbtn, false);
+        }
+        private void accentColorReset_Click(object sender, RoutedEventArgs e)
+        {
+            System.Windows.Media.Color defaultColor = System.Windows.Media.Color.FromArgb(255, 50, 108, 243);
+            System.Drawing.Color defaultColor2 = System.Drawing.Color.FromArgb(255, 50, 108, 243);
+            Properties.Settings.Default.AccentColor = defaultColor2;
+            Properties.Settings.Default.Save();
+            SolidColorBrush primaryColorBrush = new SolidColorBrush();
+            primaryColorBrush.Color = defaultColor;
+            Application.Current.Resources["DarkPrimaryBrush"] = primaryColorBrush;
+            Application.Current.Resources["PrimaryBrush"] = primaryColorBrush;
+        }
+        private void themeBtn_Click(object sender, RoutedEventArgs e)
+        {
+            if (lightThemeBtn.IsChecked.GetValueOrDefault())
+            {
+                Properties.Settings.Default.Theme = "Light";
+            }
+            else if (darkThemeBtn.IsChecked.GetValueOrDefault())
+            {
+                Properties.Settings.Default.Theme = "Dark";
+            }
+            else if (micaThemeBtn.IsChecked.GetValueOrDefault())
+            {
+                Properties.Settings.Default.Theme = "Mica";
+            }
+            Properties.Settings.Default.Save();
+            updateTheme();
+        }
         private async void reloadLibraries_Click(object sender, RoutedEventArgs e)
         {
             BeatDatas.Clear();

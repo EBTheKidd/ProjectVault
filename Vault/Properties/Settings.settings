@@ -8,5 +8,11 @@
     <Setting Name="sampleLibraryPath" Type="System.String" Scope="User">
       <Value Profile="(Default)" />
     </Setting>
+    <Setting Name="Theme" Type="System.String" Scope="User">
+      <Value Profile="(Default)">Dark</Value>
+    </Setting>
+    <Setting Name="AccentColor" Type="System.Drawing.Color" Scope="User">
+      <Value Profile="(Default)">50, 108, 243</Value>
+    </Setting>
   </Settings>
 </SettingsFile>
