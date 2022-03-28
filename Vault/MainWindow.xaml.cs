@@ -323,11 +323,6 @@ namespace Vault
                 settingsGrid.Visibility = Visibility.Visible;
             }
         }
-        private void nowPlayingBtn_Click(object sender, RoutedEventArgs e)
-        {
-            audioPlayerDrawer.IsOpen = !audioPlayerDrawer.IsOpen;
-        }
-
         private void openFileFolderBtn_Click(object sender, RoutedEventArgs e)
         {
             if (beatLibraryMenu.IsSelected)
@@ -354,7 +349,6 @@ namespace Vault
             if (outputDevice == null || audioFile == null)
             {
                 string playFilePath = "";
-                outputDevice = new WaveOutEvent();
                 if (beatLibraryMenu.IsSelected)
                 {
                     if (beatDataTable.SelectedItem == null)
@@ -373,10 +367,39 @@ namespace Vault
                 }
                 if (playFilePath.Length > 0)
                 {
+                    outputDevice = new WaveOutEvent();
                     audioFile = new AudioFileReader(playFilePath);
                     outputDevice.Init(audioFile);
+
+                    try
+                    {
+                        var tfile = TagLib.File.Create(playFilePath);
+                        foreach (TagLib.IPicture artwork in tfile.Tag.Pictures)
+                        {
+                            MemoryStream ms = new MemoryStream(artwork.Data.Data);
+                            ms.Seek(0, SeekOrigin.Begin);
+                            BitmapImage bitmap = new BitmapImage();
+                            bitmap.BeginInit();
+                            bitmap.StreamSource = ms;
+                            bitmap.EndInit();
+                            Image img = new Image()
+                            {
+                                Source = bitmap,
+                                Width = 100,
+                                Height = 100,
+                                Stretch = Stretch.UniformToFill,
+                            };
+                            nowPlayingArtwork.Items.Add(img);
+                            nowPlayingArtwork.Visibility = Visibility.Visible;
+                        }
+                    }
+                    catch (Exception ee)
+                    {
+                        nowPlayingArtwork.Visibility = Visibility.Collapsed;
+                    }
                 }
-            } else // switching play file
+            }
+            else // switching play file
             {
                 string playFilePath = audioFile?.FileName;
                 bool beatFile = playFilePath.Equals(BeatDatas.Where(x => x.filePath.Equals(playFilePath)).FirstOrDefault().filePath);
@@ -407,9 +430,35 @@ namespace Vault
                     outputDevice = new WaveOutEvent();
                     audioFile = new AudioFileReader(playFilePath);
                     outputDevice.Init(audioFile);
+
+                    try
+                    {
+                        var tfile = TagLib.File.Create(playFilePath);
+                        foreach (TagLib.IPicture artwork in tfile.Tag.Pictures)
+                        {
+                            MemoryStream ms = new MemoryStream(artwork.Data.Data);
+                            ms.Seek(0, SeekOrigin.Begin);
+                            BitmapImage bitmap = new BitmapImage();
+                            bitmap.BeginInit();
+                            bitmap.StreamSource = ms;
+                            bitmap.EndInit();
+                            Image img = new Image()
+                            {
+                                Source = bitmap,
+                                Width = 100,
+                                Height = 100,
+                                Stretch = Stretch.UniformToFill,
+                            };
+                            nowPlayingArtwork.Items.Add(img);
+                            nowPlayingArtwork.Visibility = Visibility.Visible;
+                        }
+                    }
+                    catch (Exception ee)
+                    {
+                        nowPlayingArtwork.Visibility = Visibility.Collapsed;
+                    }
                 }
             }
-
 
             if (outputDevice?.PlaybackState == PlaybackState.Playing)
             {
@@ -420,6 +469,24 @@ namespace Vault
             {
                 nowPlayingPlayBtn.SolidIcon = Meziantou.WpfFontAwesome.FontAwesomeSolidIcon.PauseCircle;
                 outputDevice.Play();
+            }
+        }
+
+        #region Now Playing 
+        private void nowPlayingBtn_Click(object sender, RoutedEventArgs e)
+        {
+            audioPlayerDrawer.IsOpen = !audioPlayerDrawer.IsOpen;
+        }
+
+        private void nowPlayingVolume_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+        {
+            if (outputDevice == null || audioFile == null)
+            {
+
+            }
+            else
+            {
+                outputDevice.Volume = float.Parse(nowPlayingVolume.Value / 100 + "");
             }
         }
         private void nowPlayingFastBackwards_Click(object sender, RoutedEventArgs e)
@@ -438,6 +505,7 @@ namespace Vault
         {
             try { audioFile?.Skip(3); } catch (Exception ee) { }
         }
+        #endregion
         #region Beat Library
         private void beatEditBtn_Click(object sender, RoutedEventArgs e)
         {

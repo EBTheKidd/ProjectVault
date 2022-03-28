@@ -8,8 +8,8 @@
         xmlns:local="clr-namespace:Vault"
         mc:Ignorable="d"
         Title="Vault" 
-        Height="500" MinHeight="500"
-        Width="800" MinWidth="800"
+        Height="600" MinHeight="600"
+        Width="900" MinWidth="900"
         WindowStartupLocation="CenterScreen"
         ResizeMode="CanResizeWithGrip">
     <Grid >
@@ -79,30 +79,44 @@
                     <DropShadowEffect Direction="270" BlurRadius="10" Opacity=".5"/>
                 </Border.Effect>
                 <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="Auto"/>
                         <RowDefinition/>
                     </Grid.RowDefinitions>
-                    <Label x:Name="nowPlayingTitle" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Padding="5" BorderThickness="0" Background="{x:Null}"/>
 
-                    <Slider x:Name="nowPlayingSlider" Grid.Row="1" VerticalAlignment="Stretch" Orientation="Horizontal"/>
 
-                    <hc:ButtonGroup Grid.Row="2" Margin="10">
-                        <Button BorderBrush="{x:Null}" Click="nowPlayingFastBackwards_Click">
-                            <fa:FontAwesomeIcon SolidIcon="FastBackward" FontSize="15" Foreground="{DynamicResource DarkPrimaryBrush}"/>
+                    <hc:Carousel IsCenter="True" AutoRun="True" Grid.Column="0" Grid.RowSpan="3" Margin="10" Width="100" Height="100" x:Name="nowPlayingArtwork" Visibility="Collapsed"/>
+                    <hc:UniformSpacingPanel Spacing="1" Orientation="Horizontal" Grid.Column="2" Grid.Row="0" HorizontalAlignment="Right" Margin="10">
+                        <fa:FontAwesomeIcon SolidIcon="VolumeDown" FontSize="15" Foreground="{DynamicResource DarkPrimaryBrush}"/>
+                        <Slider Value="100" Margin="0, 10, 0, 10" ValueChanged="nowPlayingVolume_ValueChanged" Width="100"  HorizontalAlignment="Right" x:Name="nowPlayingVolume" Minimum="0" Maximum="100" Orientation="Horizontal"/>
+                        <fa:FontAwesomeIcon SolidIcon="VolumeUp" FontSize="15" Foreground="{DynamicResource DarkPrimaryBrush}"/>
+                    </hc:UniformSpacingPanel>
+
+                    <hc:RunningBlock Grid.Column="1" Grid.Row="0" Grid.ColumnSpan="2" x:Name="nowPlayingTitle" FontSize="18" HorizontalAlignment="Stretch" Padding="5" Margin="0, 10, 140, 10" BorderThickness="0" Background="{x:Null}"/>
+
+                    <Slider Grid.Column="1" Grid.ColumnSpan="2" Grid.Row="1" x:Name="nowPlayingSlider" VerticalAlignment="Stretch" Orientation="Horizontal"/>
+
+                    <hc:ButtonGroup Grid.Column="1" Grid.ColumnSpan="2" Grid.Row="2" Margin="10">
+                        <Button BorderBrush="{x:Null}" Click="nowPlayingFastBackwards_Click" >
+                            <fa:FontAwesomeIcon SolidIcon="FastBackward" FontSize="21" Foreground="{DynamicResource DarkPrimaryBrush}"/>
                         </Button>
                         <Button BorderBrush="{x:Null}" Click="nowPlayingBackwards_Click">
-                            <fa:FontAwesomeIcon SolidIcon="Backward" FontSize="15" Foreground="{DynamicResource DarkPrimaryBrush}"/>
+                            <fa:FontAwesomeIcon SolidIcon="Backward" FontSize="21" Foreground="{DynamicResource DarkPrimaryBrush}"/>
                         </Button>
                         <Button BorderBrush="{x:Null}" Click="playBtn_Click">
-                            <fa:FontAwesomeIcon SolidIcon="PlayCircle" x:Name="nowPlayingPlayBtn" FontSize="15" Foreground="{DynamicResource DarkPrimaryBrush}"/>
+                            <fa:FontAwesomeIcon SolidIcon="PlayCircle" x:Name="nowPlayingPlayBtn" FontSize="21" Foreground="{DynamicResource DarkPrimaryBrush}"/>
                         </Button>
                         <Button BorderBrush="{x:Null}" Click="nowPlayingForwards_Click">
-                            <fa:FontAwesomeIcon SolidIcon="Forward" FontSize="15" Foreground="{DynamicResource DarkPrimaryBrush}"/>
+                            <fa:FontAwesomeIcon SolidIcon="Forward" FontSize="21" Foreground="{DynamicResource DarkPrimaryBrush}"/>
                         </Button>
                         <Button BorderBrush="{x:Null}" Click="nowPlayingFastForwards_Click">
-                            <fa:FontAwesomeIcon SolidIcon="FastForward" FontSize="15" Foreground="{DynamicResource DarkPrimaryBrush}"/>
+                            <fa:FontAwesomeIcon SolidIcon="FastForward" FontSize="21" Foreground="{DynamicResource DarkPrimaryBrush}"/>
                         </Button>
                     </hc:ButtonGroup>
                 </Grid>

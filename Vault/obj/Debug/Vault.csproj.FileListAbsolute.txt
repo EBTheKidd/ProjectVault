@@ -71,3 +71,4 @@ C:\Users\eblan\Desktop\ProjectVault\Vault\obj\Debug\Vault.csproj.GenerateResourc
 C:\Users\eblan\Desktop\ProjectVault\Vault\obj\Debug\Vault.csproj.CoreCompileInputs.cache
 C:\Users\eblan\Desktop\ProjectVault\Vault\obj\Debug\Vault.exe
 C:\Users\eblan\Desktop\ProjectVault\Vault\obj\Debug\Vault.pdb
+C:\Users\eblan\Desktop\ProjectVault\Vault\obj\Debug\Vault.csproj.AssemblyReference.cache
