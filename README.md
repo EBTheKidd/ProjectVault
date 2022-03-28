@@ -1,6 +1,5 @@
 # ProjectVault
 <img src="https://img.shields.io/badge/platform-windows-success.svg"> <img src="https://img.shields.io/badge/version-0.1.5-blue">
-Producer program designed to improve workflow &amp; allow for more organization for producers
 
 ## Screenshots
 #### Results Tab
