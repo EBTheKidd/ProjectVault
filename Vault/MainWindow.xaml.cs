@@ -24,6 +24,7 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 using System.Windows.Shell;
+using System.Xml.Serialization;
 using Application = System.Windows.Application;
 using Button = System.Windows.Controls.Button;
 
@@ -43,6 +44,8 @@ namespace Vault
         private WaveOutEvent outputDevice;
         private AudioFileReader audioFile;
         private AudioDataModel editAudio;
+        public static ObservableCollection<AudioDataModel> BeatPackBeatDatas { get; set; } = new ObservableCollection<AudioDataModel>();
+        public static ObservableCollection<BeatPackModel> BeatPackDatas { get; set; } = new ObservableCollection<BeatPackModel>();
         public static ObservableCollection<AudioDataModel> BeatDatas { get; set; } = new ObservableCollection<AudioDataModel>();
         public static ObservableCollection<AudioDataModel> SampleDatas { get; set; } = new ObservableCollection<AudioDataModel>();
         public MainWindow()
@@ -59,7 +62,7 @@ namespace Vault
             WindowChrome.SetWindowChrome(this, chrome);
             InitializeComponent();
             updateTheme();
-
+            LoadPlayerData();
             // load initial data (libraries, etc...)
             if (Properties.Settings.Default.beatLibraryPath.Length > 5)
             {
@@ -157,6 +160,46 @@ namespace Vault
             [Category("Metadata"), ReadOnly(true)]
             public string Description { get; set; }
         }
+        public struct BeatPackModel
+        {
+            public string Title { get; set; }
+            public double Cost { get; set; }
+            public ObservableCollection<AudioDataModel> Beats { get; set; }
+            public List<string> EmailRecipients { get; set; }
+
+            public string getRecipientsStr()
+            {
+                return String.Join(",", EmailRecipients);
+            }
+            public string getBeatsStr()
+            {
+                List<string> titles = new List<string>();
+                foreach (AudioDataModel a in Beats)
+                {
+                    titles.Add(a.Title);
+                }
+                return String.Join(",", titles);
+            }
+        }
+        public static void SaveBeatPacks()
+        {
+            XmlSerializer xs = new XmlSerializer(BeatPackDatas.GetType());
+            using (StreamWriter wr = new StreamWriter("beatpackdata.xml"))
+            {
+                xs.Serialize(wr, BeatPackDatas);
+            }
+        }
+        public static void LoadPlayerData()
+        {
+            if (File.Exists("beatpackdata.xml"))
+            {
+                XmlSerializer xs = new XmlSerializer(BeatPackDatas.GetType());
+                using (StreamReader rd = new StreamReader("beatpackdata.xml"))
+                {
+                    BeatPackDatas = xs.Deserialize(rd) as ObservableCollection<BeatPackModel>;
+                }
+            }
+        }
 
         #region Global
         public void updateTheme()
@@ -225,9 +268,18 @@ namespace Vault
             await Dispatcher.BeginInvoke(new Action(() => {
                 sampleLoadingPanel.Visibility = Visibility.Visible;
             }));
-            string[] sampleFolders = Properties.Settings.Default.sampleLibraryPath.Split(',').Where(x => x.Trim().Length > 0).ToArray();
+            List<string> sampleFolders = Properties.Settings.Default.sampleLibraryPath.Split(',').Where(x => x.Trim().Length > 0).ToList();
+            List<string> sampleFoldersAll = Properties.Settings.Default.sampleLibraryPath.Split(',').Where(x => x.Trim().Length > 0).ToList();
             foreach (string s in sampleFolders)
             {
+                foreach (string d in Directory.GetDirectories(s, "*.*", SearchOption.AllDirectories))
+                {
+                    sampleFoldersAll.Add(d);
+                }
+            }
+            foreach (string s in sampleFoldersAll)
+            {
+
                 //Grabs all files from FileDirectory
                 string[] files;
                 files = Directory.GetFiles(s);
@@ -704,6 +756,13 @@ namespace Vault
         }
         #endregion
         #region Beat Library
+        private void addToBeatPack_Click(object sender, RoutedEventArgs e)
+        {
+            if (beatDataTable.SelectedItem != null && !BeatPackBeatDatas.Contains((AudioDataModel)beatDataTable.SelectedItem)){
+                BeatPackBeatDatas.Add((AudioDataModel)beatDataTable.SelectedItem);
+                HandyControl.Controls.Growl.InfoGlobal("'" + ((AudioDataModel)beatDataTable.SelectedItem).Title + "' added to current beat pack!");
+            }
+        }
         private void beatSearch_TextChanged(object sender, TextChangedEventArgs e)
         {
             var sb = (HandyControl.Controls.SearchBar)sender;
@@ -715,6 +774,70 @@ namespace Vault
             else
             {
                 beatDataTable.ItemsSource = BeatDatas;
+            }
+        }
+        #endregion
+        #region Beat Packs
+        private void saveBeatPack_Click(object sender, RoutedEventArgs e)
+        {
+            //
+            List<string> recipients = new List<string>();
+            foreach (ListBoxItem s in beatPackRecipientsList.Items)
+            {
+                recipients.Add(s.Content.ToString());
+            }
+            BeatPackModel bpm = new BeatPackModel
+            {
+                Title = beatPackTitle.Text,
+                Cost = beatPackCost.Value,
+                Beats = BeatPackBeatDatas,
+                EmailRecipients = recipients
+            };
+            if (!BeatPackDatas.Contains(bpm))
+            {
+                BeatPackDatas.Add(bpm);
+            }
+            SaveBeatPacks();
+        }
+        private void saveBeatPackZip_Click(object sender, RoutedEventArgs e)
+        {
+            //
+        }
+        private void sendBeatPack_Click(object sender, RoutedEventArgs e)
+        {
+            //
+        }
+        private void addRecipientsFromFile_Click(object sender, RoutedEventArgs e)
+        {
+            //
+        }
+        private void removeBeatPackBeat_Click(object sender, RoutedEventArgs e)
+        {
+            if (beatPackBeatsList.SelectedItem != null)
+            {
+                BeatPackBeatDatas.Remove((AudioDataModel)beatPackBeatsList.SelectedItem);
+                HandyControl.Controls.Growl.InfoGlobal("'" + ((AudioDataModel)beatDataTable.SelectedItem).Title + "' has been removed.");
+            }
+        }
+        private void removeBeatPackRecipient_Click(object sender, RoutedEventArgs e)
+        {
+            if (beatPackRecipientsList.SelectedItem != null)
+            {
+                beatPackRecipientsList.Items.Remove((ListBoxItem)beatPackRecipientsList.SelectedItem);
+            }
+        }
+        private void addEmailRecipient_Click(object sender, RoutedEventArgs e)
+        {
+            if (IsValidEmail(emailRecipientTextBox.Text))
+            {
+                beatPackRecipientsList.Items.Add(new ListBoxItem
+                {
+                    Content = emailRecipientTextBox.Text
+                });
+                emailRecipientTextBox.Text = "";
+            } else
+            {
+                HandyControl.Controls.Growl.WarningGlobal("Please Enter A Valid Email!");
             }
         }
         #endregion
@@ -882,5 +1005,24 @@ namespace Vault
 
         #endregion
 
+
+        bool IsValidEmail(string email)
+        {
+            var trimmedEmail = email.Trim();
+
+            if (trimmedEmail.EndsWith("."))
+            {
+                return false; // suggested by @TK-421
+            }
+            try
+            {
+                var addr = new System.Net.Mail.MailAddress(email);
+                return addr.Address == trimmedEmail;
+            }
+            catch
+            {
+                return false;
+            }
+        }
     }
 }
