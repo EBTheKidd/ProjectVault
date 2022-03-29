@@ -372,9 +372,10 @@
                 <Button Content="Find Random Samples" Click="Button_Click"/>
                 <Button Content="Next" Click="nextRandomSample_Click"/>
                 <Button Content="Previous" Click="previousRandomSample_Click"/>
-                <Label x:Name="sampleNumber" BorderThickness="0" Background="{x:Null}"/>
+                <Label x:Name="sampleNumber" />
                 <hc:LoadingCircle x:Name="loadingVideo" Visibility="Collapsed" Width="20" Height="20"/>
-                <TextBlock x:Name="ytBrowserUrl" />
+                <TextBox Style="{StaticResource TextBoxExtend}" hc:InfoElement.TitlePlacement="Left" hc:InfoElement.Title="Tags"/>
+
             </hc:UniformSpacingPanel>
             <wv2:WebView2 Margin="25" Grid.Row="2" Grid.ColumnSpan="2" x:Name="ytBrowser" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"/>
         </Grid>
