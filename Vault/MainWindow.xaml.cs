@@ -2,6 +2,7 @@
 using HandyControl.Tools;
 using Microsoft.Win32;
 using NAudio.Wave;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -9,6 +10,7 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Net;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
@@ -25,6 +27,7 @@ using System.Windows.Navigation;
 using System.Windows.Shapes;
 using System.Windows.Shell;
 using System.Xml.Serialization;
+using YoutubeExplode;
 using Application = System.Windows.Application;
 using Button = System.Windows.Controls.Button;
 
@@ -1053,7 +1056,58 @@ namespace Vault
 
         #endregion
 
-
+        private async void Button_Click(object sender, RoutedEventArgs e)
+        {
+            loadingVideo.Visibility = Visibility.Visible;
+            await Task.Delay(10);
+            try
+            {
+                var count = 25;
+                var API_KEY = "AIzaSyDY75GZ4FTjiIX6C6Lb-UKQ7Cmvk_67zj4";
+                var q = RandomString(3);
+                var url = "https://www.googleapis.com/youtube/v3/search?key=" + API_KEY + "&maxResults=" + count + "&part=snippet&type=video&q=" + q;
+                string musicUrl = "";
+                using (WebClient wc = new WebClient())
+                {
+                    var json = wc.DownloadString(url);
+                    dynamic jsonObject = JsonConvert.DeserializeObject(json);
+                    var youtube = new YoutubeClient();
+                    foreach (var line in jsonObject["items"])
+                    {
+                        Task.Run(async () =>
+                        {
+                            // You can specify both video ID or URL
+                            var video = await youtube.Videos.GetAsync("https://youtube.com/watch?v=" + line["id"]["videoId"]);
+                            var title = video.Title; // "Collections - Blender 2.80 Fundamentals"
+                            var author = video.Author.Title; // "Blender"
+                            var duration = video.Duration; // 00:07:20
+                            var keywords = video.Keywords;
+                            foreach (string s in keywords)
+                            {
+                                if (musicUrl.Length == 0 && s.ToLower().Contains("music"))
+                                {
+                                    musicUrl = video.Id;
+                                    await Dispatcher.BeginInvoke(new Action(() => {
+                                        ytBrowser.Source = new Uri("https://www.youtube-nocookie.com/embed/" + musicUrl + "?rel=0&amp;showinfo=0");
+                                        loadingVideo.Visibility = Visibility.Collapsed;
+                                    }));
+                                    break;
+                                }
+                            }
+                        });
+                    }
+                }
+            } catch (Exception e2)
+            {
+                loadingVideo.Visibility = Visibility.Collapsed;
+            }
+        }
+        public static string RandomString(int length)
+        {
+            const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+            return new string(Enumerable.Repeat(chars, length)
+              .Select(s => s[new Random().Next(s.Length)]).ToArray());
+        }
         bool IsValidEmail(string email)
         {
             var trimmedEmail = email.Trim();
@@ -1072,5 +1126,6 @@ namespace Vault
                 return false;
             }
         }
+
     }
 }

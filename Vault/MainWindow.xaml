@@ -5,6 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:hc="https://handyorg.github.io/handycontrol"
         xmlns:fa="clr-namespace:Meziantou.WpfFontAwesome;assembly=Meziantou.WpfFontAwesome"
+        xmlns:wv2="clr-namespace:Microsoft.Web.WebView2.Wpf;assembly=Microsoft.Web.WebView2.Wpf"
         xmlns:local="clr-namespace:Vault"
         mc:Ignorable="d"
         Title="Vault" 
@@ -359,14 +360,16 @@
             </Grid.ColumnDefinitions>
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
                 <RowDefinition Height="*"/>
             </Grid.RowDefinitions>
             <Label Content="Sample Finder" FontSize="25" Foreground="{DynamicResource DarkPrimaryBrush}" BorderThickness="0" Background="{x:Null}"/>
-            <hc:UniformSpacingPanel Grid.Row="1" Grid.ColumnSpan="2" Orientation="Vertical" Margin="5" Spacing="5">
-                <Label BorderThickness="0" Background="{x:Null}" Content="Here you will be able to find random samples!"/>
-                <Label BorderThickness="0" Background="{x:Null}" Content="(Source is currently undecided. Spotify and Youtube are the current contenders)"/>
-                <Label BorderThickness="0" Background="{x:Null}" Content="I liked this idea from Samplette so all idea credits to them!"/>
+            <hc:UniformSpacingPanel Orientation="Horizontal" Spacing="5" Grid.Row="1" Grid.ColumnSpan="2">
+                <Button Content="Find Random Sample" Click="Button_Click"/>
+                <hc:LoadingCircle x:Name="loadingVideo" Visibility="Collapsed" Width="20" Height="20"/>
             </hc:UniformSpacingPanel>
+            <TextBlock x:Name="ytBrowserUrl" Grid.Row="1" Grid.Column="1"/>
+            <wv2:WebView2 Margin="25" Grid.Row="2" Grid.ColumnSpan="2" x:Name="ytBrowser" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"/>
         </Grid>
         <Grid Grid.Column="1" Grid.Row="0" x:Name="marketingGrid" Visibility="Collapsed">
             <Grid.ColumnDefinitions>
