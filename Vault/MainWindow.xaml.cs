@@ -46,6 +46,8 @@ namespace Vault
         public TagLib.IPicture artwork { get; set; }
         private WaveOutEvent outputDevice;
         private AudioFileReader audioFile;
+        private AudioDataModel nowPlayingAudio { get; set; }
+        public bool manualAudioSwitch = false;
         private AudioDataModel editAudio;
         private bool repeat;
         private bool shuffle;
@@ -53,6 +55,7 @@ namespace Vault
         public static ObservableCollection<BeatPackModel> BeatPackDatas { get; set; } = new ObservableCollection<BeatPackModel>();
         public static ObservableCollection<AudioDataModel> BeatDatas { get; set; } = new ObservableCollection<AudioDataModel>();
         public static ObservableCollection<AudioDataModel> SampleDatas { get; set; } = new ObservableCollection<AudioDataModel>();
+        public List<string> youtubeVideos = new List<string>();
         public MainWindow()
         {
             // Init window & components
@@ -67,7 +70,14 @@ namespace Vault
             WindowChrome.SetWindowChrome(this, chrome);
             InitializeComponent();
             updateTheme();
-            LoadPlayerData();
+            LoadBeatPacks();
+
+            outputDevice?.Dispose();
+            outputDevice = new WaveOutEvent();
+            outputDevice.PlaybackStopped += delegate
+            {
+                playAudioFile();
+            };
             // load initial data (libraries, etc...)
             if (Properties.Settings.Default.beatLibraryPath.Length > 5)
             {
@@ -195,7 +205,7 @@ namespace Vault
                 xs.Serialize(wr, BeatPackDatas);
             }
         }
-        public static void LoadPlayerData()
+        public static void LoadBeatPacks()
         {
             if (File.Exists("beatpackdata.xml"))
             {
@@ -339,10 +349,7 @@ namespace Vault
                                 }
                             }));
                         }
-                        catch (Exception ee)
-                        {
-                            Console.WriteLine("could not load sample " + i);
-                        }
+                        catch (Exception ee) { Console.WriteLine("Failed to load sample '" + files[i] + "'"); }
                     }
                 }
             }
@@ -476,133 +483,106 @@ namespace Vault
                 }
             }
         }
+
+        public void playAudioFile(bool manual = false)
+        {
+            ObservableCollection<AudioDataModel> source = new ObservableCollection<AudioDataModel>();
+            if (BeatDatas.Contains(nowPlayingAudio)) { source = BeatDatas; }
+            if (SampleDatas.Contains(nowPlayingAudio)) { source = SampleDatas; }
+
+            if (outputDevice.PlaybackState != PlaybackState.Stopped)
+            {
+                outputDevice.Stop();
+            }
+            else
+            {
+                if (repeatToggle.IsChecked.Value || manual || audioFile?.FileName != nowPlayingAudio.filePath)
+                {
+                    audioFile = new AudioFileReader(nowPlayingAudio.filePath);
+                    outputDevice.Init(audioFile);
+                    nowPlayingPlayBtn.SolidIcon = Meziantou.WpfFontAwesome.FontAwesomeSolidIcon.PauseCircle;
+                    outputDevice.Play();
+                }
+                else if (shuffleToggle.IsChecked.Value)
+                {
+                    AudioDataModel nextAudio = source[new Random().Next(source.Count)];
+                    audioFile = new AudioFileReader(nextAudio.filePath);
+                    nowPlayingAudio = nextAudio;
+                    outputDevice.Init(audioFile);
+                    nowPlayingPlayBtn.SolidIcon = Meziantou.WpfFontAwesome.FontAwesomeSolidIcon.PauseCircle;
+                    outputDevice.Play();
+                }
+
+                try
+                {
+                    var tfile = TagLib.File.Create(nowPlayingAudio.filePath);
+                    foreach (TagLib.IPicture artwork in tfile.Tag.Pictures)
+                    {
+                        MemoryStream ms = new MemoryStream(artwork.Data.Data);
+                        ms.Seek(0, SeekOrigin.Begin);
+                        BitmapImage bitmap = new BitmapImage();
+                        bitmap.BeginInit();
+                        bitmap.StreamSource = ms;
+                        bitmap.EndInit();
+                        Image img = new Image()
+                        {
+                            Source = bitmap,
+                            Width = 115,
+                            Height = 115,
+                            Stretch = Stretch.UniformToFill,
+                        };
+                        nowPlayingArtwork.Items.Add(img);
+                        nowPlayingArtwork.Visibility = Visibility.Visible;
+                    }
+                }
+                catch (Exception ee)
+                {
+                    nowPlayingArtwork.Visibility = Visibility.Collapsed;
+                }
+                nowPlayingBtn.IsEnabled = true;
+            }
+
+
+        }
         private void playBtn_Click(object sender, RoutedEventArgs e)
         {
-            if (outputDevice == null || audioFile == null)
+            AudioDataModel selectedAudioFile = new AudioDataModel { };
+            if (audioPlayerDrawer.IsOpen)
             {
-                string playFilePath = "";
-                if (beatLibraryMenu.IsSelected)
+                selectedAudioFile = nowPlayingAudio;
+            } else if (beatLibraryMenu.IsSelected)
+            {
+                if (beatDataTable.SelectedItem == null)
                 {
-                    if (beatDataTable.SelectedItem == null)
-                    {
-                        beatDataTable.SelectedIndex = 0;
-                    }
-                    playFilePath = ((AudioDataModel)beatDataTable.SelectedItem).filePath;
+                    beatDataTable.SelectedIndex = 0;
                 }
-                else if (sampleLibraryMenu.IsSelected)
-                {
-                    if (sampleDataTable.SelectedItem == null)
-                    {
-                        sampleDataTable.SelectedIndex = 0;
-                    }
-                    playFilePath = ((AudioDataModel)sampleDataTable.SelectedItem).filePath;
-                }
-                if (playFilePath.Length > 0)
-                {
-                    outputDevice = new WaveOutEvent();
-                    audioFile = new AudioFileReader(playFilePath);
-                    outputDevice.Init(audioFile);
-
-                    try
-                    {
-                        var tfile = TagLib.File.Create(playFilePath);
-                        foreach (TagLib.IPicture artwork in tfile.Tag.Pictures)
-                        {
-                            MemoryStream ms = new MemoryStream(artwork.Data.Data);
-                            ms.Seek(0, SeekOrigin.Begin);
-                            BitmapImage bitmap = new BitmapImage();
-                            bitmap.BeginInit();
-                            bitmap.StreamSource = ms;
-                            bitmap.EndInit();
-                            Image img = new Image()
-                            {
-                                Source = bitmap,
-                                Width = 100,
-                                Height = 100,
-                                Stretch = Stretch.UniformToFill,
-                            };
-                            nowPlayingArtwork.Items.Add(img);
-                            nowPlayingArtwork.Visibility = Visibility.Visible;
-                        }
-                    }
-                    catch (Exception ee)
-                    {
-                        nowPlayingArtwork.Visibility = Visibility.Collapsed;
-                    }
-                }
+                selectedAudioFile = (AudioDataModel)beatDataTable.SelectedItem;
             }
-            else // switching play file
+            else if (sampleLibraryMenu.IsSelected)
             {
-                string playFilePath = audioFile?.FileName;
-                bool beatFile = playFilePath.Equals(BeatDatas.Where(x => x.filePath.Equals(playFilePath)).FirstOrDefault().filePath);
-                bool sampleFile = playFilePath.Equals(SampleDatas.Where(x => x.filePath.Equals(playFilePath)).FirstOrDefault().filePath);
-
-                if (beatLibraryMenu.IsSelected)
+                if (sampleDataTable.SelectedItem == null)
                 {
-                    if (beatDataTable.SelectedItem == null)
-                    {
-                        beatDataTable.SelectedIndex = 0;
-                    }
-                    playFilePath = ((AudioDataModel)beatDataTable.SelectedItem).filePath;
+                    sampleDataTable.SelectedIndex = 0;
                 }
-                else if (sampleLibraryMenu.IsSelected)
-                {
-                    if (sampleDataTable.SelectedItem == null)
-                    {
-                        sampleDataTable.SelectedIndex = 0;
-                    }
-                    playFilePath = ((AudioDataModel)sampleDataTable.SelectedItem).filePath;
-                }
-                if (playFilePath.Length > 0 && playFilePath != audioFile?.FileName)
-                {
-                    outputDevice?.Dispose();
-                    outputDevice = null;
-                    audioFile?.Dispose();
-                    audioFile = null;
-                    outputDevice = new WaveOutEvent();
-                    audioFile = new AudioFileReader(playFilePath);
-                    outputDevice.Init(audioFile);
-
-                    try
-                    {
-                        var tfile = TagLib.File.Create(playFilePath);
-                        foreach (TagLib.IPicture artwork in tfile.Tag.Pictures)
-                        {
-                            MemoryStream ms = new MemoryStream(artwork.Data.Data);
-                            ms.Seek(0, SeekOrigin.Begin);
-                            BitmapImage bitmap = new BitmapImage();
-                            bitmap.BeginInit();
-                            bitmap.StreamSource = ms;
-                            bitmap.EndInit();
-                            Image img = new Image()
-                            {
-                                Source = bitmap,
-                                Width = 100,
-                                Height = 100,
-                                Stretch = Stretch.UniformToFill,
-                            };
-                            nowPlayingArtwork.Items.Add(img);
-                            nowPlayingArtwork.Visibility = Visibility.Visible;
-                        }
-                    }
-                    catch (Exception ee)
-                    {
-                        nowPlayingArtwork.Visibility = Visibility.Collapsed;
-                    }
-                }
+                selectedAudioFile = (AudioDataModel)sampleDataTable.SelectedItem;
             }
-
-
-            nowPlayingBtn.IsEnabled = true;
-            if (outputDevice?.PlaybackState == PlaybackState.Playing)
+            
+            if (nowPlayingAudio.filePath != selectedAudioFile.filePath || outputDevice?.PlaybackState == PlaybackState.Stopped) // if different song than currently loaded, load it
             {
-                nowPlayingPlayBtn.SolidIcon = Meziantou.WpfFontAwesome.FontAwesomeSolidIcon.PlayCircle;
-                outputDevice.Pause();
-            }
-            else if (outputDevice?.PlaybackState == PlaybackState.Paused || outputDevice?.PlaybackState == PlaybackState.Stopped)
+                nowPlayingAudio = selectedAudioFile;
+                playAudioFile(true);
+            } else
             {
-                nowPlayingPlayBtn.SolidIcon = Meziantou.WpfFontAwesome.FontAwesomeSolidIcon.PauseCircle;
-                outputDevice.Play();
+                if (outputDevice?.PlaybackState == PlaybackState.Playing) // play/pause loaded song
+                {
+                    nowPlayingPlayBtn.SolidIcon = Meziantou.WpfFontAwesome.FontAwesomeSolidIcon.PlayCircle;
+                    outputDevice.Pause();
+                }
+                else if (outputDevice?.PlaybackState == PlaybackState.Paused || outputDevice?.PlaybackState == PlaybackState.Stopped)
+                {
+                    nowPlayingPlayBtn.SolidIcon = Meziantou.WpfFontAwesome.FontAwesomeSolidIcon.PauseCircle;
+                    outputDevice.Play();
+                }
             }
         }
         private void saveAudioBtn_Click(object sender, RoutedEventArgs e)
@@ -701,11 +681,9 @@ namespace Vault
                 bitmap.StreamSource = ms;
                 bitmap.EndInit();
                 editBeatImage.Source = bitmap;
+                editBeatImage.Visibility = Visibility.Visible;
             }
-            catch (Exception ee)
-            {
-                Console.WriteLine("no image");
-            }
+            catch (Exception ee){ editBeatImage.Visibility = Visibility.Collapsed; }
         }
         private void audioEditBrowseImage_Click(object sender, RoutedEventArgs e)
         {
@@ -726,6 +704,7 @@ namespace Vault
                 pictFrames[0] = (TagLib.IPicture)albumCoverPictFrame;
                 var test = (AudioDataModel)editProperties.SelectedObject;
                 artwork = (TagLib.IPicture)albumCoverPictFrame;
+                editBeatImage.Visibility = Visibility.Visible;
             }
         }
         private void nowPlayingSlider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
@@ -986,7 +965,6 @@ namespace Vault
             var dialog = new FolderBrowserDialog();
             if (dialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)
             {
-                Console.WriteLine(dialog.SelectedPath);
                 sampleFoldersList.Items.Add(new ListBoxItem()
                 {
                     Content = dialog.SelectedPath
@@ -1022,7 +1000,6 @@ namespace Vault
             var dialog = new FolderBrowserDialog();
             if (dialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)
             {
-                Console.WriteLine(dialog.SelectedPath);
                 beatFoldersList.Items.Add(new ListBoxItem()
                 {
                     Content = dialog.SelectedPath
@@ -1056,50 +1033,109 @@ namespace Vault
 
         #endregion
 
+
+        private async void nextRandomSample_Click(object sender, RoutedEventArgs e)
+        {
+            string current = ytBrowser.Source.ToString();
+            int index = youtubeVideos.IndexOf(current);
+            sampleNumber.Content = index + 2 + " of " + youtubeVideos.Count;
+            ytBrowser.Source = new Uri(youtubeVideos[index + 1]);
+        }
+        private async void previousRandomSample_Click(object sender, RoutedEventArgs e)
+        {
+            string current = ytBrowser.Source.ToString();
+            int index = youtubeVideos.IndexOf(current);
+            sampleNumber.Content = index - 2 + " of " + youtubeVideos.Count;
+            ytBrowser.Source = new Uri(youtubeVideos[index - 1]);
+        }
         private async void Button_Click(object sender, RoutedEventArgs e)
         {
+            Console.WriteLine("Getting Random Video");
             loadingVideo.Visibility = Visibility.Visible;
             await Task.Delay(10);
             try
             {
-                var count = 25;
+                var count = 1000;
                 var API_KEY = "AIzaSyDY75GZ4FTjiIX6C6Lb-UKQ7Cmvk_67zj4";
                 var q = RandomString(3);
-                var url = "https://www.googleapis.com/youtube/v3/search?key=" + API_KEY + "&maxResults=" + count + "&part=snippet&type=video&q=" + q;
+                var url = "https://www.googleapis.com/youtube/v3/search?key=" + API_KEY + "&maxResults=" + count + "&part=snippet&videoCategoryId=10&type=video&q=" + q;
                 string musicUrl = "";
+                bool loadVideo = false;
                 using (WebClient wc = new WebClient())
                 {
                     var json = wc.DownloadString(url);
+                    Console.WriteLine(json);
                     dynamic jsonObject = JsonConvert.DeserializeObject(json);
                     var youtube = new YoutubeClient();
+                    int taskCount = 0;
                     foreach (var line in jsonObject["items"])
                     {
-                        Task.Run(async () =>
+                        Console.WriteLine("Tasks: " + taskCount);
+                        try { sampleNumber.Content = youtubeVideos.IndexOf(ytBrowser.Source.ToString()) + 1 + " of " + youtubeVideos.Count; } catch (Exception noooo) { }
+                        if (taskCount < 15)
                         {
-                            // You can specify both video ID or URL
+                            taskCount++;
+                            Task.Run(async () =>
+                            {
+                                var video = await youtube.Videos.GetAsync("https://youtube.com/watch?v=" + line["id"]["videoId"]);
+                                var title = video.Title; 
+                                var author = video.Author.Title; 
+                                var duration = video.Duration; 
+                                var keywords = video.Keywords;
+                                foreach (string s in keywords)
+                                {
+                                    musicUrl = video.Id;
+                                    if (!youtubeVideos.Contains("https://www.youtube-nocookie.com/embed/" + musicUrl + "?rel=0&amp;showinfo=0"))
+                                    {
+                                        youtubeVideos.Add("https://www.youtube-nocookie.com/embed/" + musicUrl + "?rel=0&amp;showinfo=0");
+                                    }
+                                    if (musicUrl.Length > 0 && !loadVideo)
+                                    {
+                                        loadVideo = true;
+                                        await Dispatcher.BeginInvoke(new Action(() => {
+                                            ytBrowser.Source = new Uri("https://www.youtube-nocookie.com/embed/" + musicUrl + "?rel=0&amp;showinfo=0");
+                                        }));
+                                        break;
+                                    }
+                                }
+                                taskCount--;
+                            });
+                        } else
+                        {
                             var video = await youtube.Videos.GetAsync("https://youtube.com/watch?v=" + line["id"]["videoId"]);
-                            var title = video.Title; // "Collections - Blender 2.80 Fundamentals"
-                            var author = video.Author.Title; // "Blender"
-                            var duration = video.Duration; // 00:07:20
+                            var title = video.Title;
+                            var author = video.Author.Title;
+                            var duration = video.Duration;
                             var keywords = video.Keywords;
                             foreach (string s in keywords)
                             {
-                                if (musicUrl.Length == 0 && s.ToLower().Contains("music"))
+                                musicUrl = video.Id;
+                                if (!youtubeVideos.Contains("https://www.youtube-nocookie.com/embed/" + musicUrl + "?rel=0&amp;showinfo=0"))
                                 {
-                                    musicUrl = video.Id;
+                                    youtubeVideos.Add("https://www.youtube-nocookie.com/embed/" + musicUrl + "?rel=0&amp;showinfo=0");
+                                }
+                                if (musicUrl.Length > 0 && !loadVideo)
+                                {
+                                    loadVideo = true;
                                     await Dispatcher.BeginInvoke(new Action(() => {
                                         ytBrowser.Source = new Uri("https://www.youtube-nocookie.com/embed/" + musicUrl + "?rel=0&amp;showinfo=0");
-                                        loadingVideo.Visibility = Visibility.Collapsed;
                                     }));
                                     break;
                                 }
                             }
-                        });
+                        }
                     }
+                }
+
+                loadingVideo.Visibility = Visibility.Collapsed;
+                if (musicUrl.Length == 0)
+                {
+                    Button_Click(sender, e);
                 }
             } catch (Exception e2)
             {
                 loadingVideo.Visibility = Visibility.Collapsed;
+                Console.WriteLine(e2.StackTrace);
             }
         }
         public static string RandomString(int length)
