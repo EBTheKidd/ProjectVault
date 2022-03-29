@@ -44,6 +44,8 @@ namespace Vault
         private WaveOutEvent outputDevice;
         private AudioFileReader audioFile;
         private AudioDataModel editAudio;
+        private bool repeat;
+        private bool shuffle;
         public static ObservableCollection<AudioDataModel> BeatPackBeatDatas { get; set; } = new ObservableCollection<AudioDataModel>();
         public static ObservableCollection<BeatPackModel> BeatPackDatas { get; set; } = new ObservableCollection<BeatPackModel>();
         public static ObservableCollection<AudioDataModel> BeatDatas { get; set; } = new ObservableCollection<AudioDataModel>();
@@ -162,6 +164,7 @@ namespace Vault
         }
         public struct BeatPackModel
         {
+            public string id { get; set; }
             public string Title { get; set; }
             public double Cost { get; set; }
             public ObservableCollection<AudioDataModel> Beats { get; set; }
@@ -586,6 +589,8 @@ namespace Vault
                 }
             }
 
+
+            nowPlayingBtn.IsEnabled = true;
             if (outputDevice?.PlaybackState == PlaybackState.Playing)
             {
                 nowPlayingPlayBtn.SolidIcon = Meziantou.WpfFontAwesome.FontAwesomeSolidIcon.PlayCircle;
@@ -720,13 +725,19 @@ namespace Vault
                 artwork = (TagLib.IPicture)albumCoverPictFrame;
             }
         }
+        private void nowPlayingSlider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+        {
+            if (audioFile != null && sender != null)
+            {
+                audioFile.Position = Convert.ToInt64(nowPlayingSlider.Value);
+            }
+        }
         #endregion
         #region Now Playing 
         private void nowPlayingBtn_Click(object sender, RoutedEventArgs e)
         {
             audioPlayerDrawer.IsOpen = !audioPlayerDrawer.IsOpen;
         }
-
         private void nowPlayingVolume_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
         {
             if (outputDevice == null || audioFile == null)
@@ -778,9 +789,46 @@ namespace Vault
         }
         #endregion
         #region Beat Packs
+        
+
+
+        private void editBeatPack_Click(object sender, RoutedEventArgs e)
+        {
+            if (beatPackDataTable.SelectedItem != null)
+            {
+                var bp = (BeatPackModel)beatPackDataTable.SelectedItem;
+                beatPackTitle.Text = bp.Title;
+                beatPackCost.Value = bp.Cost;
+                BeatPackBeatDatas.Clear();
+                foreach (AudioDataModel m in bp.Beats)
+                {
+                    BeatPackBeatDatas.Add(m);
+                }
+                beatPackRecipientsList.Items.Clear();
+                foreach (string s in bp.EmailRecipients)
+                {
+                    beatPackRecipientsList.Items.Add(new ListBoxItem()
+                    {
+                        Content = s
+                    });
+                }
+                createEditBeatPacksTab.IsSelected = true;
+            }
+        }
+
+        private void deleteBeatPack_Click(object sender, RoutedEventArgs e)
+        {
+            if (beatPackDataTable.SelectedItem != null)
+            {
+                var bp = (BeatPackModel)beatPackDataTable.SelectedItem;
+                BeatPackDatas.Remove(bp);
+                SaveBeatPacks();
+            }
+        }
+
+
         private void saveBeatPack_Click(object sender, RoutedEventArgs e)
         {
-            //
             List<string> recipients = new List<string>();
             foreach (ListBoxItem s in beatPackRecipientsList.Items)
             {
@@ -788,6 +836,7 @@ namespace Vault
             }
             BeatPackModel bpm = new BeatPackModel
             {
+                id = Guid.NewGuid().ToString(),
                 Title = beatPackTitle.Text,
                 Cost = beatPackCost.Value,
                 Beats = BeatPackBeatDatas,
@@ -816,7 +865,6 @@ namespace Vault
             if (beatPackBeatsList.SelectedItem != null)
             {
                 BeatPackBeatDatas.Remove((AudioDataModel)beatPackBeatsList.SelectedItem);
-                HandyControl.Controls.Growl.InfoGlobal("'" + ((AudioDataModel)beatDataTable.SelectedItem).Title + "' has been removed.");
             }
         }
         private void removeBeatPackRecipient_Click(object sender, RoutedEventArgs e)

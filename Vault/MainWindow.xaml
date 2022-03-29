@@ -75,7 +75,7 @@
                 </hc:SideMenuItem.Icon>
             </hc:SideMenuItem>
         </hc:SideMenu>
-        <Button Grid.Column="0" Margin="5" Style="{DynamicResource ButtonPrimary}" BorderThickness="0" VerticalAlignment="Bottom" HorizontalAlignment="Stretch" x:Name="nowPlayingBtn" Click="nowPlayingBtn_Click">
+        <Button IsEnabled="False" Grid.Column="0" Margin="5" Style="{DynamicResource ButtonPrimary}" BorderThickness="0" VerticalAlignment="Bottom" HorizontalAlignment="Stretch" x:Name="nowPlayingBtn" Click="nowPlayingBtn_Click">
             <hc:UniformSpacingPanel Orientation="Horizontal" Spacing="5">
                 <TextBlock Text="Now Playing" FontSize="14"/>
                 <fa:FontAwesomeIcon SolidIcon="ArrowUp" FontSize="18"/>
@@ -108,7 +108,7 @@
 
                     <hc:RunningBlock Grid.Column="1" Grid.Row="0" Grid.ColumnSpan="2" x:Name="nowPlayingTitle" FontSize="18" HorizontalAlignment="Stretch" Padding="5" Margin="0, 10, 140, 10" BorderThickness="0" Background="{x:Null}"/>
 
-                    <Slider Grid.Column="1" Grid.ColumnSpan="2" Grid.Row="1" x:Name="nowPlayingSlider" VerticalAlignment="Stretch" Orientation="Horizontal"/>
+                    <Slider  Grid.Column="1" Grid.ColumnSpan="2" Grid.Row="1" x:Name="nowPlayingSlider" VerticalAlignment="Stretch" Orientation="Horizontal" ValueChanged="nowPlayingSlider_ValueChanged"/>
 
                     <hc:ButtonGroup Grid.Column="1" Grid.ColumnSpan="2" Grid.Row="2" Margin="10">
                         <Button BorderBrush="{x:Null}" Click="nowPlayingFastBackwards_Click" >
@@ -180,7 +180,7 @@
             <Label Content="Beat Library" FontSize="25" Foreground="{DynamicResource DarkPrimaryBrush}" BorderThickness="0" Background="{x:Null}"/>
             <hc:SearchBar Margin="5" TextChanged="beatSearch_TextChanged" Grid.Column="1" Grid.Row="0"/>
             
-            <DataGrid Grid.Column="0" Grid.Row="1" Grid.ColumnSpan="2" x:Name="beatDataTable" HeadersVisibility="Column" hc:DataGridAttach.ShowRowNumber="True" RowHeaderWidth="60" ColumnHeaderHeight="30" AutoGenerateColumns="False" ItemsSource="{Binding BeatDatas, UpdateSourceTrigger=Default, RelativeSource={RelativeSource AncestorType=Window}}" HorizontalScrollBarVisibility="Hidden">
+            <DataGrid Grid.Column="0" Grid.Row="1" Grid.ColumnSpan="2" x:Name="beatDataTable" HeadersVisibility="Column" hc:DataGridAttach.ShowRowNumber="True" RowHeaderWidth="60" ColumnHeaderHeight="30" AutoGenerateColumns="False" ItemsSource="{Binding BeatDatas, UpdateSourceTrigger=Default, RelativeSource={RelativeSource AncestorType=Window}}" HorizontalScrollBarVisibility="Hidden" SelectionMode="Single">
                 <DataGrid.RowHeaderTemplate>
                     <DataTemplate>
                         <CheckBox IsChecked="{Binding IsSelected,RelativeSource={RelativeSource AncestorType=DataGridRow}}"/>
@@ -214,7 +214,7 @@
                 </DataGrid.Columns>
             </DataGrid>
         </Grid>
-        <Grid Grid.Column="1" Grid.Row="0" x:Name="beatPacksGrid" Visibility="Visible">
+        <Grid Grid.Column="1" Grid.Row="0" x:Name="beatPacksGrid" Visibility="Collapsed">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="Auto"/>
                 <ColumnDefinition Width="*"/>
@@ -225,7 +225,7 @@
             </Grid.RowDefinitions>
             <Label Content="Beat Packs" FontSize="25" Foreground="{DynamicResource DarkPrimaryBrush}" BorderThickness="0" Background="{x:Null}"/>
             <TabControl Grid.Row="1" Grid.ColumnSpan="2">
-                <TabItem Header="Create Beat Pack">
+                <TabItem Header="Create/Edit Beat Pack" x:Name="createEditBeatPacksTab">
                     <Grid>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="Auto"/>
@@ -237,7 +237,7 @@
                         </Grid.RowDefinitions>
                         <hc:UniformSpacingPanel Margin="5" Orientation="Vertical" Spacing="5" Grid.Column="0" Grid.Row="0" Grid.RowSpan="2">
                             <Label Content="Included Beats"/>
-                            <ListView Margin="5,0,5,5" Height="400" x:Name="beatPackBeatsList" BorderThickness="0"  Grid.Column="0" Grid.Row="1" Grid.RowSpan="2" Width="300" ItemsSource="{Binding BeatPackBeatDatas, UpdateSourceTrigger=Default, RelativeSource={RelativeSource AncestorType=Window}}" VerticalAlignment="Top">
+                            <ListView Margin="5,0,5,5" Height="400" x:Name="beatPackBeatsList" BorderThickness="0"  Grid.Column="0" Grid.Row="1" Grid.RowSpan="2" Width="400" ItemsSource="{Binding BeatPackBeatDatas, UpdateSourceTrigger=Default, RelativeSource={RelativeSource AncestorType=Window}}" VerticalAlignment="Top">
                                 <ListView.View>
                                     <GridView >
                                         <GridViewColumn Header="Title" Width="215" DisplayMemberBinding="{Binding Title}"/>
@@ -246,6 +246,10 @@
                                 </ListView.View>
                             </ListView>
                             <Button Content="Remove" Click="removeBeatPackBeat_Click"/>
+
+                            <Button BorderThickness="0" Click="playBtn_Click">
+                                <fa:FontAwesomeIcon SolidIcon="Play" FontSize="15" Foreground="{DynamicResource DarkPrimaryBrush}"/>
+                            </Button>
                         </hc:UniformSpacingPanel>
                         <hc:UniformSpacingPanel Margin="5" Orientation="Vertical" Spacing="5" Grid.Column="1" Grid.Row="0">
                             <Label Content="Beat Pack Details"/>
@@ -269,7 +273,7 @@
                         </hc:UniformSpacingPanel>
                     </Grid>
                 </TabItem>
-                <TabItem Header="My Beat Packs">
+                <TabItem Header="My Beat Packs" x:Name="myBeatPacksTab">
                     <DataGrid Grid.Column="0" Grid.Row="1" Grid.ColumnSpan="2" x:Name="beatPackDataTable" HeadersVisibility="Column" hc:DataGridAttach.ShowRowNumber="True" RowHeaderWidth="60" ColumnHeaderHeight="30" AutoGenerateColumns="False" ItemsSource="{Binding BeatPackDatas, UpdateSourceTrigger=Default, RelativeSource={RelativeSource AncestorType=Window}}" HorizontalScrollBarVisibility="Hidden">
                         <DataGrid.RowHeaderTemplate>
                             <DataTemplate>
@@ -279,17 +283,21 @@
                         <DataGrid.Columns>
                             <DataGridTextColumn IsReadOnly="True" CanUserResize="False" Binding="{Binding Title}" Header="Title"/>
                             <DataGridTextColumn IsReadOnly="True" CanUserResize="False" Binding="{Binding Cost, StringFormat=${0}}" Header="Cost"/>
-                            <DataGridTextColumn IsReadOnly="True" CanUserResize="False" Binding="{Binding getRecipientsStr()}" Header="Recipients" />
-                            <DataGridTextColumn IsReadOnly="True" CanUserResize="False" Binding="{Binding getBeatsStr()}" Header="Beats" />
+                            <DataGridTextColumn IsReadOnly="True" CanUserResize="False" Binding="{Binding EmailRecipients.Count}" Header="Recipients" />
+                            <DataGridTextColumn IsReadOnly="True" CanUserResize="False" Binding="{Binding Beats.Count}" Header="Beats" />
+                            <DataGridTextColumn IsReadOnly="True" CanUserResize="False" Binding="{Binding id}" Header="ID" />
                             <DataGridTemplateColumn>
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate>
                                         <hc:UniformSpacingPanel Orientation="Horizontal" Spacing="3">
                                             <Button BorderThickness="0" >
-                                                <fa:FontAwesomeIcon SolidIcon="Trash" FontSize="15" Foreground="{DynamicResource DarkPrimaryBrush}"/>
-                                            </Button>
-                                            <Button BorderThickness="0" >
                                                 <fa:FontAwesomeIcon SolidIcon="FolderOpen" FontSize="15" Foreground="{DynamicResource DarkPrimaryBrush}"/>
+                                            </Button>
+                                            <Button BorderThickness="0" Click="editBeatPack_Click">
+                                                <fa:FontAwesomeIcon SolidIcon="Edit" FontSize="15" Foreground="{DynamicResource DarkPrimaryBrush}"/>
+                                            </Button>
+                                            <Button BorderThickness="0" Click="deleteBeatPack_Click">
+                                                <fa:FontAwesomeIcon SolidIcon="Trash" FontSize="15" Foreground="{DynamicResource DarkPrimaryBrush}"/>
                                             </Button>
                                         </hc:UniformSpacingPanel>
                                     </DataTemplate>
@@ -311,7 +319,7 @@
             </Grid.RowDefinitions>
             <Label Content="Sample Library" FontSize="25" Foreground="{DynamicResource DarkPrimaryBrush}" BorderThickness="0" Background="{x:Null}"/>
             <hc:SearchBar Grid.Column="1" Grid.Row="0" TextChanged="sampleSearch_TextChanged" Margin="5"/>
-            <DataGrid Grid.Column="0" Grid.Row="1" Grid.ColumnSpan="2" x:Name="sampleDataTable" HeadersVisibility="Column" hc:DataGridAttach.ShowRowNumber="True" RowHeaderWidth="60" ColumnHeaderHeight="30" AutoGenerateColumns="False" ItemsSource="{Binding SampleDatas, UpdateSourceTrigger=Default, RelativeSource={RelativeSource AncestorType=Window}}" HorizontalScrollBarVisibility="Hidden">
+            <DataGrid Grid.Column="0" Grid.Row="1" Grid.ColumnSpan="2" x:Name="sampleDataTable" HeadersVisibility="Column" hc:DataGridAttach.ShowRowNumber="True" RowHeaderWidth="60" ColumnHeaderHeight="30" AutoGenerateColumns="False" ItemsSource="{Binding SampleDatas, UpdateSourceTrigger=Default, RelativeSource={RelativeSource AncestorType=Window}}" HorizontalScrollBarVisibility="Hidden" SelectionMode="Single">
                 <DataGrid.RowHeaderTemplate>
                     <DataTemplate>
                         <CheckBox IsChecked="{Binding IsSelected,RelativeSource={RelativeSource AncestorType=DataGridRow}}"/>
