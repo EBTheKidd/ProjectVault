@@ -16,11 +16,19 @@ Select, Compile, and Send beat packs to artists
 View, Play, Edit, and Sort samples from your selected libraries
 ### Sample Finder
 Locate & Download 'random' samples from youtube (Not all Royalty free)
+Will possibly integrate spotify in the future
 ### User Settings
 Configure Beat & Sample Libraries & Style/Theme Customizations
 
-
-
+## Potential Ideas
+### Self-Hosted Audio Servers
+Will allow users to 'host' an audio server that they can connect to anywhere
+### Public Sample Libraries
+Opt-In feature that would allow users to contribute their sample libraries in exchange for access to other peoples samples libraries (peer 2 peer ideally)
+### Public Artist Email Library
+Emails of artists (with genre, style, etc included in data) that would be able to be used for a 'Contact List' for sending beats
+### YouTube Beat video maker
+Auto-Creation of beat videos for youtube promotion
 
 ## Copyright
 Copyright (c) 2021-2022 Ethan Blank.
