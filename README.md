@@ -31,7 +31,7 @@ Emails of artists (with genre, style, etc included in data) that would be able t
 Auto-Creation of beat videos for youtube promotion
 
 ## Copyright
-Copyright (c) 2021-2022 Ethan Blank.
+Copyright (c) 2022-2023 Ethan Blank.
 
 Permission is hereby granted, free of charge, to any person
 obtaining a copy of this software and associated documentation
