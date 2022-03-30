@@ -1065,6 +1065,7 @@ namespace Vault
         #endregion
 
         #region Sample Finder
+        
         private async void nextRandomSample_Click(object sender, RoutedEventArgs e)
         {
             try { ytSampleSelector.SelectedIndex += 1; } catch (Exception eee) { }
@@ -1076,6 +1077,12 @@ namespace Vault
         private async void randomSample_Click(object sender, RoutedEventArgs e)
         {
             try { ytSampleSelector.SelectedIndex = new Random().Next(YoutubeVideoDatas.Count); } catch (Exception eee) { }
+        }
+        private async void clearRandomSamples_Click(object sender, RoutedEventArgs e)
+        {
+            YoutubeVideoDatas.Clear();
+            sampleNumber.Content = "None";
+            SaveVideoDatas();
         }
         private async void removeSelectedYtSample_Click(object sender, RoutedEventArgs e)
         {
@@ -1166,7 +1173,7 @@ namespace Vault
                 await Task.Delay(10);
                 try
                 {
-                    var count = 1000;
+                    var count = 50;
                     var API_KEY = "AIzaSyDY75GZ4FTjiIX6C6Lb-UKQ7Cmvk_67zj4";
                     var q = "";
                     foreach (var t in tagPanel.Items)
@@ -1220,6 +1227,7 @@ namespace Vault
                 {
                     loadingVideo.Visibility = Visibility.Collapsed;
                     Console.WriteLine(e2.StackTrace);
+                    HandyControl.Controls.Growl.ErrorGlobal("There was an error with the youtube API. This likely means too many requests are being sent. Please try again later.");
                 }
             } else
             {

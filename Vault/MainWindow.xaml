@@ -378,13 +378,20 @@
                 <Button Content="Find Samples"  Click="getRandomSamples"/>
                 <TextBox Text="" KeyDown="tagSearchbox_KeyDown" x:Name="tagSearchbox" Style="{StaticResource TextBoxExtend}" hc:InfoElement.TitlePlacement="Left" hc:InfoElement.Title="Enter Tags:" Width="150" Height="30"/>
             </hc:UniformSpacingPanel>
-            <hc:TagContainer x:Name="tagPanel" Grid.Row="1" Grid.Column="1" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" BorderBrush="{x:Null}" Padding="5"/>
+            <hc:TagContainer x:Name="tagPanel" Grid.Row="1" Grid.Column="1" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" BorderBrush="{x:Null}" Padding="5">
+                <hc:Tag Content="-Beat"/>
+                <hc:Tag Content="-Mix"/>
+                <hc:Tag Content="-Playlist"/>
+                <hc:Tag Content="-Pack"/>
+                <hc:Tag Content="-Mixtape"/>
+            </hc:TagContainer>
 
             <hc:UniformSpacingPanel Orientation="Horizontal" Spacing="5" Grid.Row="2" Grid.ColumnSpan="2" Margin="5">
                 <Button Content="Previous" Click="previousRandomSample_Click" Width="75"/>
                 <Label x:Name="sampleNumber" Width="75" BorderThickness="0" Background="{x:Null}" />
                 <Button Content="Next" Click="nextRandomSample_Click" Width="75"/>
                 <Button Content="🔀" Click="randomSample_Click"/>
+                <Button Content="Clear" Click="clearRandomSamples_Click"/>
             </hc:UniformSpacingPanel>
             <hc:UniformSpacingPanel Orientation="Horizontal" Spacing="5" Grid.Row="3" Grid.ColumnSpan="2" Margin="5">
                 <ComboBox x:Name="ytSampleSelector" Width="400" SelectionChanged="ComboBox_SelectionChanged" DisplayMemberPath="Title" ItemsSource="{Binding YoutubeVideoDatas, UpdateSourceTrigger=Default, RelativeSource={RelativeSource AncestorType=Window}}"/>

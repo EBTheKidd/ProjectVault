@@ -177,3 +177,8 @@ C:\Users\eblan\Desktop\ProjectVault\Vault\obj\Release\Vault.csproj.GenerateResou
 C:\Users\eblan\Desktop\ProjectVault\Vault\obj\Release\Vault.csproj.CoreCompileInputs.cache
 C:\Users\eblan\Desktop\ProjectVault\Vault\obj\Release\Vault.exe
 C:\Users\eblan\Desktop\ProjectVault\Vault\obj\Release\Vault.pdb
+C:\Users\eblan\Desktop\ProjectVault\Vault\bin\Release\ffmpeg.exe
+C:\Users\eblan\Desktop\ProjectVault\Vault\bin\Release\CliWrap.dll
+C:\Users\eblan\Desktop\ProjectVault\Vault\bin\Release\YoutubeExplode.Converter.dll
+C:\Users\eblan\Desktop\ProjectVault\Vault\bin\Release\CliWrap.xml
+C:\Users\eblan\Desktop\ProjectVault\Vault\bin\Release\YoutubeExplode.Converter.xml
