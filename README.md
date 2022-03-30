@@ -1,9 +1,22 @@
 # ProjectVault
 <img src="https://img.shields.io/badge/platform-windows-success.svg"> <img src="https://img.shields.io/badge/version-0.1.5-blue">
+Work-In-Progress tool for producers that is designed to help organize the producers workflow, with many extra features to inspire the producer. Please submit suggestions to eblank1221@gmail.com if you would like to see something added!
+Donations are by no means required, but this project is self hosted, self maintained, and always free, so they would be greatly appreaciated!
 
 ## Screenshots
-#### Results Tab
 ![](https://github.com/EBTheKidd/ProjectVault/blob/main/demos/1.png?raw=true)
+
+## Features
+####Beat Library
+View, Play, Edit, and Sort beats from your selected libraries
+####Beat Pack Maker
+Select, Compile, and Send beat packs to artists
+####Sample Library
+View, Play, Edit, and Sort samples from your selected libraries
+####Sample Finder
+Locate & Download 'random' samples from youtube (Not all Royalty free)
+####User Settings
+Configure Beat & Sample Libraries & Style/Theme Customizations
 
 #### Copyright
 Copyright (c) 2021-2022 Ethan Blank.
