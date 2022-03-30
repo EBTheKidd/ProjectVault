@@ -19,7 +19,10 @@ Locate & Download 'random' samples from youtube (Not all Royalty free)
 ### User Settings
 Configure Beat & Sample Libraries & Style/Theme Customizations
 
-#### Copyright
+
+
+
+## Copyright
 Copyright (c) 2021-2022 Ethan Blank.
 
 Permission is hereby granted, free of charge, to any person
