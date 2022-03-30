@@ -28,6 +28,7 @@ using System.Windows.Shapes;
 using System.Windows.Shell;
 using System.Xml.Serialization;
 using YoutubeExplode;
+using YoutubeExplode.Converter;
 using Application = System.Windows.Application;
 using Button = System.Windows.Controls.Button;
 
@@ -55,7 +56,7 @@ namespace Vault
         public static ObservableCollection<BeatPackModel> BeatPackDatas { get; set; } = new ObservableCollection<BeatPackModel>();
         public static ObservableCollection<AudioDataModel> BeatDatas { get; set; } = new ObservableCollection<AudioDataModel>();
         public static ObservableCollection<AudioDataModel> SampleDatas { get; set; } = new ObservableCollection<AudioDataModel>();
-        public List<string> youtubeVideos = new List<string>();
+        public static ObservableCollection<YoutubeVideoModel> YoutubeVideoDatas { get; set; } = new ObservableCollection<YoutubeVideoModel>();
         public MainWindow()
         {
             // Init window & components
@@ -71,6 +72,7 @@ namespace Vault
             InitializeComponent();
             updateTheme();
             LoadBeatPacks();
+            LoadVideoDatas();
 
             outputDevice?.Dispose();
             outputDevice = new WaveOutEvent();
@@ -175,6 +177,12 @@ namespace Vault
             [Category("Metadata"), ReadOnly(true)]
             public string Description { get; set; }
         }
+        public struct YoutubeVideoModel
+        {
+            public string Title { get; set; }
+            public string id { get; set; }
+            public double rating { get; set; }
+        }
         public struct BeatPackModel
         {
             public string id { get; set; }
@@ -213,6 +221,29 @@ namespace Vault
                 using (StreamReader rd = new StreamReader("beatpackdata.xml"))
                 {
                     BeatPackDatas = xs.Deserialize(rd) as ObservableCollection<BeatPackModel>;
+                }
+            }
+        }
+        public void SaveVideoDatas()
+        {
+            XmlSerializer xs = new XmlSerializer(YoutubeVideoDatas.GetType());
+            using (StreamWriter wr = new StreamWriter("videodata.xml"))
+            {
+                xs.Serialize(wr, YoutubeVideoDatas);
+            }
+        }
+        public void LoadVideoDatas()
+        {
+            if (File.Exists("videodata.xml"))
+            {
+                XmlSerializer xs = new XmlSerializer(YoutubeVideoDatas.GetType());
+                using (StreamReader rd = new StreamReader("videodata.xml"))
+                {
+                    YoutubeVideoDatas = xs.Deserialize(rd) as ObservableCollection<YoutubeVideoModel>;
+                }
+                if (YoutubeVideoDatas.Count > 3)
+                {
+                    ytSampleSelector.SelectedItem = YoutubeVideoDatas[new Random().Next(YoutubeVideoDatas.Count - 1)];
                 }
             }
         }
@@ -1033,117 +1064,169 @@ namespace Vault
 
         #endregion
 
-
+        #region Sample Finder
         private async void nextRandomSample_Click(object sender, RoutedEventArgs e)
         {
-            string current = ytBrowser.Source.ToString();
-            int index = youtubeVideos.IndexOf(current);
-            sampleNumber.Content = index + 2 + " of " + youtubeVideos.Count;
-            ytBrowser.Source = new Uri(youtubeVideos[index + 1]);
+            try { ytSampleSelector.SelectedIndex += 1; } catch (Exception eee) { }
         }
         private async void previousRandomSample_Click(object sender, RoutedEventArgs e)
         {
-            string current = ytBrowser.Source.ToString();
-            int index = youtubeVideos.IndexOf(current);
-            sampleNumber.Content = index - 2 + " of " + youtubeVideos.Count;
-            ytBrowser.Source = new Uri(youtubeVideos[index - 1]);
+            try { ytSampleSelector.SelectedIndex -= 1; } catch (Exception eee) { }
         }
-        private async void Button_Click(object sender, RoutedEventArgs e)
+        private async void randomSample_Click(object sender, RoutedEventArgs e)
         {
-            Console.WriteLine("Getting Random Video");
-            loadingVideo.Visibility = Visibility.Visible;
-            await Task.Delay(10);
+            try { ytSampleSelector.SelectedIndex = new Random().Next(YoutubeVideoDatas.Count); } catch (Exception eee) { }
+        }
+        private async void removeSelectedYtSample_Click(object sender, RoutedEventArgs e)
+        {
+            try { YoutubeVideoDatas.RemoveAt(ytSampleSelector.SelectedIndex); SaveVideoDatas(); nextRandomSample_Click(sender, e); } catch (Exception eee) { }
+        }
+        private async void downloadSelectedYtSample_Click(object sender, RoutedEventArgs e)
+        {
             try
             {
-                var count = 1000;
-                var API_KEY = "AIzaSyDY75GZ4FTjiIX6C6Lb-UKQ7Cmvk_67zj4";
-                var q = RandomString(3);
-                var url = "https://www.googleapis.com/youtube/v3/search?key=" + API_KEY + "&maxResults=" + count + "&part=snippet&videoCategoryId=10&type=video&q=" + q;
-                string musicUrl = "";
-                bool loadVideo = false;
-                using (WebClient wc = new WebClient())
+                if (ytSampleSelector.SelectedItem != null)
                 {
-                    var json = wc.DownloadString(url);
-                    Console.WriteLine(json);
-                    dynamic jsonObject = JsonConvert.DeserializeObject(json);
+                    loadingVideo.Visibility = Visibility.Visible;
+                    var video = (YoutubeVideoModel)ytSampleSelector.SelectedItem;
                     var youtube = new YoutubeClient();
-                    int taskCount = 0;
-                    foreach (var line in jsonObject["items"])
+                    if (!Directory.Exists("Downloads"))
                     {
-                        Console.WriteLine("Tasks: " + taskCount);
-                        try { sampleNumber.Content = youtubeVideos.IndexOf(ytBrowser.Source.ToString()) + 1 + " of " + youtubeVideos.Count; } catch (Exception noooo) { }
-                        if (taskCount < 15)
+                        Directory.CreateDirectory("Downloads");
+                    }
+                    await youtube.Videos.DownloadAsync("https://youtube.com/watch?v=" + video.id, "Downloads/" + video.Title + ".mp3", o => o.SetFFmpegPath("ffmpeg.exe"));
+                    // https://github.com/ffbinaries/ffbinaries-prebuilt/releases/download/v4.4.1/ffmpeg-4.4.1-win-64.zip
+                    loadingVideo.Visibility = Visibility.Hidden;
+                    HandyControl.Controls.Growl.SuccessGlobal(video.Title + " has been downloaded!");
+                }
+            } catch (Exception eee)
+            {
+                Console.WriteLine(eee.StackTrace);
+                HandyControl.Controls.Growl.ErrorGlobal("There was an error downloading your file!");
+            }
+        }
+
+        private void tagSearchbox_KeyDown(object sender, System.Windows.Input.KeyEventArgs e)
+        {
+            if (e.Key != System.Windows.Input.Key.Enter) return;
+
+            var list = tagSearchbox.Text.Split(' ').ToList();
+            foreach (string s in list)
+            {
+                HandyControl.Controls.Tag t = new HandyControl.Controls.Tag
+                {
+                    Content = s,
+                    ShowCloseButton = true
+                };
+                if (!tagPanel.Items.Contains(t))
+                {
+                    tagPanel.Items.Add(t);
+                } 
+            }
+            tagSearchbox.Text = "";
+        }
+
+        private void ComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (ytSampleSelector.SelectedItem != null)
+            {
+                try
+                {
+                    var sample = (YoutubeVideoModel)ytSampleSelector.SelectedItem;
+                    ytBrowser.Source = new Uri("https://www.youtube-nocookie.com/embed/" + sample.id + "?rel=0&amp;showinfo=0");
+                    sampleNumber.Content = ytSampleSelector.SelectedIndex + 1 + " of " + YoutubeVideoDatas.Count;
+                    ytsampleRate.Value = sample.rating;
+                }
+                catch (Exception www) { }
+            }
+        }
+        private void ytsampleRate_ValueChanged(object sender, HandyControl.Data.FunctionEventArgs<double> e)
+        {
+            if (ytSampleSelector.SelectedItem != null)
+            {
+                try
+                {
+                    var sample = YoutubeVideoDatas.Where(x => x.id == ((YoutubeVideoModel)ytSampleSelector.SelectedItem).id).First();
+                    var sample2 = sample;
+                    sample2.rating = ytsampleRate.Value;
+                    YoutubeVideoDatas.Remove(sample);
+                    YoutubeVideoDatas.Add(sample2);
+                    ytSampleSelector.SelectedItem = sample2;
+                    SaveVideoDatas();
+                }
+                catch (Exception www) { }
+            }
+        }
+        private async void getRandomSamples(object sender, RoutedEventArgs e)
+        {
+            Console.WriteLine("Getting Random Video");
+            if (tagPanel.Items.Count > 0)
+            {
+                loadingVideo.Visibility = Visibility.Visible;
+                await Task.Delay(10);
+                try
+                {
+                    var count = 1000;
+                    var API_KEY = "AIzaSyDY75GZ4FTjiIX6C6Lb-UKQ7Cmvk_67zj4";
+                    var q = "";
+                    foreach (var t in tagPanel.Items)
+                    {
+                        try
                         {
-                            taskCount++;
-                            Task.Run(async () =>
-                            {
-                                var video = await youtube.Videos.GetAsync("https://youtube.com/watch?v=" + line["id"]["videoId"]);
-                                var title = video.Title; 
-                                var author = video.Author.Title; 
-                                var duration = video.Duration; 
-                                var keywords = video.Keywords;
-                                foreach (string s in keywords)
-                                {
-                                    musicUrl = video.Id;
-                                    if (!youtubeVideos.Contains("https://www.youtube-nocookie.com/embed/" + musicUrl + "?rel=0&amp;showinfo=0"))
-                                    {
-                                        youtubeVideos.Add("https://www.youtube-nocookie.com/embed/" + musicUrl + "?rel=0&amp;showinfo=0");
-                                    }
-                                    if (musicUrl.Length > 0 && !loadVideo)
-                                    {
-                                        loadVideo = true;
-                                        await Dispatcher.BeginInvoke(new Action(() => {
-                                            ytBrowser.Source = new Uri("https://www.youtube-nocookie.com/embed/" + musicUrl + "?rel=0&amp;showinfo=0");
-                                        }));
-                                        break;
-                                    }
-                                }
-                                taskCount--;
-                            });
-                        } else
+                            HandyControl.Controls.Tag tag = (HandyControl.Controls.Tag)t;
+                            q += tag.Content.ToString().Replace("|", "%7C") + " ";
+                        }
+                        catch (Exception eee) { }
+                    }
+                    var url = "https://www.googleapis.com/youtube/v3/search?key=" + API_KEY + "&maxResults=" + count + "&part=snippet&videoCategoryId=10&type=video&q=" + q;
+                    string musicUrl = "";
+                    bool loadVideo = false;
+                    using (WebClient wc = new WebClient())
+                    {
+                        var json = wc.DownloadString(url);
+                        Console.WriteLine("Json length: " + json.Length);
+                        dynamic jsonObject = JsonConvert.DeserializeObject(json);
+                        var youtube = new YoutubeClient();
+                        foreach (var line in jsonObject["items"])
                         {
+                            sampleNumber.Content = ytSampleSelector.SelectedIndex + 1 + " of " + YoutubeVideoDatas.Count;
+                            Console.WriteLine("loading " + line["id"]["videoId"]);
                             var video = await youtube.Videos.GetAsync("https://youtube.com/watch?v=" + line["id"]["videoId"]);
                             var title = video.Title;
                             var author = video.Author.Title;
                             var duration = video.Duration;
                             var keywords = video.Keywords;
-                            foreach (string s in keywords)
+                            var newVid = new YoutubeVideoModel
                             {
+                                Title = title,
+                                id = video.Id
+                            };
+                            if (!YoutubeVideoDatas.Contains(newVid))
+                            {
+                                YoutubeVideoDatas.Add(newVid);
                                 musicUrl = video.Id;
-                                if (!youtubeVideos.Contains("https://www.youtube-nocookie.com/embed/" + musicUrl + "?rel=0&amp;showinfo=0"))
-                                {
-                                    youtubeVideos.Add("https://www.youtube-nocookie.com/embed/" + musicUrl + "?rel=0&amp;showinfo=0");
-                                }
-                                if (musicUrl.Length > 0 && !loadVideo)
-                                {
-                                    loadVideo = true;
-                                    await Dispatcher.BeginInvoke(new Action(() => {
-                                        ytBrowser.Source = new Uri("https://www.youtube-nocookie.com/embed/" + musicUrl + "?rel=0&amp;showinfo=0");
-                                    }));
-                                    break;
-                                }
+                            }
+                            if (musicUrl.Length > 0 && !loadVideo)
+                            {
+                                loadVideo = true;
+                                ytSampleSelector.SelectedIndex = YoutubeVideoDatas.IndexOf(newVid);
                             }
                         }
                     }
+                    SaveVideoDatas();
+                    loadingVideo.Visibility = Visibility.Collapsed;
                 }
-
-                loadingVideo.Visibility = Visibility.Collapsed;
-                if (musicUrl.Length == 0)
+                catch (Exception e2)
                 {
-                    Button_Click(sender, e);
+                    loadingVideo.Visibility = Visibility.Collapsed;
+                    Console.WriteLine(e2.StackTrace);
                 }
-            } catch (Exception e2)
+            } else
             {
-                loadingVideo.Visibility = Visibility.Collapsed;
-                Console.WriteLine(e2.StackTrace);
+                HandyControl.Controls.Growl.WarningGlobal("Please Enter Some Search Tags!\n\nTip: You can use Youtube API querry parameters!\n('Instrumental|Acoustic' = Instrumental OR Acoustic, '-Jazz' Removes Jazz Results)");
             }
         }
-        public static string RandomString(int length)
-        {
-            const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-            return new string(Enumerable.Repeat(chars, length)
-              .Select(s => s[new Random().Next(s.Length)]).ToArray());
-        }
+        #endregion
         bool IsValidEmail(string email)
         {
             var trimmedEmail = email.Trim();

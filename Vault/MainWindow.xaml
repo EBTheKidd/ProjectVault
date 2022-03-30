@@ -18,7 +18,7 @@
             <Setter Property="Visibility" Value="Collapsed" />
         </Style>
     </Window.Resources>
-    <Grid >
+    <Grid>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="Auto"/>
             <ColumnDefinition Width="*"/>
@@ -164,14 +164,16 @@
             </Grid.ColumnDefinitions>
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
                 <RowDefinition Height="*"/>
             </Grid.RowDefinitions>
             <Label Content="Welcome to Vault!" Grid.ColumnSpan="2" FontSize="25" Foreground="{DynamicResource DarkPrimaryBrush}" BorderThickness="0" Background="{x:Null}"/>
             <hc:UniformSpacingPanel Grid.Row="1" Grid.ColumnSpan="2" Orientation="Vertical" Margin="5" Spacing="5">
-                <Label BorderThickness="0" Background="{x:Null}" Content="You are running a pre-alpha version (v0.1.5)"/>
+                <Label BorderThickness="0" Background="{x:Null}" Content="You are running a pre-alpha version (v0.2.1)"/>
                 <Label BorderThickness="0" Background="{x:Null}" Content="This means many features are not fully implemented, and you will probably experience bugs!"/>
                 <Label BorderThickness="0" Background="{x:Null}" Content="Please send any and all feedback/bugs to eblank1221@gmail.com"/>
             </hc:UniformSpacingPanel>
+
         </Grid>
         <Grid Grid.Column="1" Grid.Row="0" x:Name="beatLibraryGrid" Visibility="Collapsed">
             <Grid.ColumnDefinitions>
@@ -365,19 +367,36 @@
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
                 <RowDefinition Height="*"/>
             </Grid.RowDefinitions>
-            <Label Content="Sample Finder" FontSize="25" Foreground="{DynamicResource DarkPrimaryBrush}" BorderThickness="0" Background="{x:Null}"/>
-            <hc:UniformSpacingPanel Orientation="Horizontal" Spacing="5" Grid.Row="1" Grid.ColumnSpan="2">
-                <Button Content="Find Random Samples" Click="Button_Click"/>
-                <Button Content="Next" Click="nextRandomSample_Click"/>
-                <Button Content="Previous" Click="previousRandomSample_Click"/>
-                <Label x:Name="sampleNumber" />
-                <hc:LoadingCircle x:Name="loadingVideo" Visibility="Collapsed" Width="20" Height="20"/>
-                <TextBox Style="{StaticResource TextBoxExtend}" hc:InfoElement.TitlePlacement="Left" hc:InfoElement.Title="Tags"/>
-
+            <Label Content="Sample Finder" HorizontalAlignment="Left" FontSize="25" Foreground="{DynamicResource DarkPrimaryBrush}" BorderThickness="0" Background="{x:Null}"/>
+            <hc:LoadingCircle x:Name="loadingVideo" Visibility="Collapsed" Grid.Column="2" Width="25" Height="25" HorizontalAlignment="Right" Margin="10"/>
+            
+            <hc:UniformSpacingPanel Orientation="Horizontal" Spacing="5" Grid.Row="1" Margin="5">
+                <Button Content="Find Samples"  Click="getRandomSamples"/>
+                <TextBox Text="" KeyDown="tagSearchbox_KeyDown" x:Name="tagSearchbox" Style="{StaticResource TextBoxExtend}" hc:InfoElement.TitlePlacement="Left" hc:InfoElement.Title="Enter Tags:" Width="150" Height="30"/>
             </hc:UniformSpacingPanel>
-            <wv2:WebView2 Margin="25" Grid.Row="2" Grid.ColumnSpan="2" x:Name="ytBrowser" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"/>
+            <hc:TagContainer x:Name="tagPanel" Grid.Row="1" Grid.Column="1" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" BorderBrush="{x:Null}" Padding="5"/>
+
+            <hc:UniformSpacingPanel Orientation="Horizontal" Spacing="5" Grid.Row="2" Grid.ColumnSpan="2" Margin="5">
+                <Button Content="Previous" Click="previousRandomSample_Click" Width="75"/>
+                <Label x:Name="sampleNumber" Width="75" BorderThickness="0" Background="{x:Null}" />
+                <Button Content="Next" Click="nextRandomSample_Click" Width="75"/>
+                <Button Content="🔀" Click="randomSample_Click"/>
+            </hc:UniformSpacingPanel>
+            <hc:UniformSpacingPanel Orientation="Horizontal" Spacing="5" Grid.Row="3" Grid.ColumnSpan="2" Margin="5">
+                <ComboBox x:Name="ytSampleSelector" Width="400" SelectionChanged="ComboBox_SelectionChanged" DisplayMemberPath="Title" ItemsSource="{Binding YoutubeVideoDatas, UpdateSourceTrigger=Default, RelativeSource={RelativeSource AncestorType=Window}}"/>
+                <hc:Rate Value="0" x:Name="ytsampleRate" ValueChanged="ytsampleRate_ValueChanged"/>
+                <Button  Click="removeSelectedYtSample_Click">
+                    <fa:FontAwesomeIcon SolidIcon="Trash" FontSize="15" Foreground="{DynamicResource DarkPrimaryBrush}"/>
+                </Button>
+                <Button Click="downloadSelectedYtSample_Click">
+                    <fa:FontAwesomeIcon SolidIcon="Download" FontSize="15" Foreground="{DynamicResource DarkPrimaryBrush}"/>
+                </Button>
+            </hc:UniformSpacingPanel>
+            <wv2:WebView2 Margin="5" Grid.Row="4" Grid.ColumnSpan="2" x:Name="ytBrowser" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"/>
         </Grid>
         <Grid Grid.Column="1" Grid.Row="0" x:Name="marketingGrid" Visibility="Collapsed">
             <Grid.ColumnDefinitions>
