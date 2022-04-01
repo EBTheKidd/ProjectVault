@@ -388,7 +388,7 @@
 
             <hc:UniformSpacingPanel Orientation="Horizontal" Spacing="5" Grid.Row="2" Grid.ColumnSpan="2" Margin="5">
                 <Button Content="Previous" Click="previousRandomSample_Click" Width="75"/>
-                <Label x:Name="sampleNumber" Width="75" BorderThickness="0" Background="{x:Null}" />
+                <Label x:Name="sampleNumber" BorderThickness="0" Background="{x:Null}" />
                 <Button Content="Next" Click="nextRandomSample_Click" Width="75"/>
                 <Button Content="🔀" Click="randomSample_Click"/>
                 <Button Content="Clear" Click="clearRandomSamples_Click"/>
@@ -432,7 +432,15 @@
                         <hc:UniformSpacingPanel Orientation="Horizontal" Spacing="5" Margin="5">
                             <hc:UniformSpacingPanel Orientation="Vertical" Spacing="5">
                                 <Label Content="Beat Library Folders" Width="200"/>
-                                <ListBox Height="100" x:Name="beatFoldersList"/>
+                                <ListBox Height="100" x:Name="beatFoldersList">
+                                    <ListBox.ItemTemplate>
+                                        <DataTemplate>
+                                            <StackPanel Orientation="Horizontal">
+                                                <TextBlock Text="{Binding}" />
+                                            </StackPanel>
+                                        </DataTemplate>
+                                    </ListBox.ItemTemplate>
+                                </ListBox>
                                 <hc:UniformSpacingPanel Orientation="Horizontal" Spacing="5">
                                     <Button Content="Add" Click="addBeatFolder_Click"/>
                                     <Button Content="Remove" Click="removeBeatFolder_Click"/>
@@ -440,7 +448,15 @@
                             </hc:UniformSpacingPanel>
                             <hc:UniformSpacingPanel Orientation="Vertical" Spacing="5">
                                 <Label Content="Sample Library Folders" Width="200"/>
-                                <ListBox Height="100" x:Name="sampleFoldersList"/>
+                                <ListBox Height="100" x:Name="sampleFoldersList" >
+                                    <ListBox.ItemTemplate>
+                                        <DataTemplate>
+                                            <StackPanel Orientation="Horizontal">
+                                                <TextBlock Text="{Binding}" />
+                                            </StackPanel>
+                                        </DataTemplate>
+                                    </ListBox.ItemTemplate>
+                                </ListBox>
                                 <hc:UniformSpacingPanel Orientation="Horizontal" Spacing="5">
                                     <Button Content="Add" Click="addSampleFolder_Click"/>
                                     <Button Content="Remove" Click="removeSampleFolder_Click"/>

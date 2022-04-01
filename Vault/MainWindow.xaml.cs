@@ -11,6 +11,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
@@ -50,8 +51,7 @@ namespace Vault
         private AudioDataModel nowPlayingAudio { get; set; }
         public bool manualAudioSwitch = false;
         private AudioDataModel editAudio;
-        private bool repeat;
-        private bool shuffle;
+        public static SettingsModel Settings = SettingsModel.init();
         public static ObservableCollection<AudioDataModel> BeatPackBeatDatas { get; set; } = new ObservableCollection<AudioDataModel>();
         public static ObservableCollection<BeatPackModel> BeatPackDatas { get; set; } = new ObservableCollection<BeatPackModel>();
         public static ObservableCollection<AudioDataModel> BeatDatas { get; set; } = new ObservableCollection<AudioDataModel>();
@@ -70,6 +70,7 @@ namespace Vault
             };
             WindowChrome.SetWindowChrome(this, chrome);
             InitializeComponent();
+            Settings.Load();
             updateTheme();
             LoadBeatPacks();
             LoadVideoDatas();
@@ -81,36 +82,10 @@ namespace Vault
                 playAudioFile();
             };
             // load initial data (libraries, etc...)
-            if (Properties.Settings.Default.beatLibraryPath.Length > 5)
-            {
-                string[] beatFolders = Properties.Settings.Default.beatLibraryPath.Split(',');
-                foreach (string s in beatFolders)
-                {
-                    if (s.Trim().Length > 0)
-                    {
-                        beatFoldersList.Items.Add(new ListBoxItem()
-                        {
-                            Content = s
-                        });
-                    }
-                }
-                Task.Run(async () => getBeats()); 
-            }
-            if (Properties.Settings.Default.sampleLibraryPath.Length > 5)
-            {
-                string[] sampleFolders = Properties.Settings.Default.sampleLibraryPath.Split(',');
-                foreach (string s in sampleFolders)
-                {
-                    if (s.Trim().Length > 0)
-                    {
-                        sampleFoldersList.Items.Add(new ListBoxItem()
-                        {
-                            Content = s
-                        });
-                    }
-                }
-                Task.Run(async () => getSamples()); 
-            }
+            beatFoldersList.ItemsSource = Settings.beatFolders;
+            sampleFoldersList.ItemsSource = Settings.sampleFolders;
+            Task.Run(async () => getBeats());
+            Task.Run(async () => getSamples());
 
             // Start data monitors (ram, cpu, now playing...)
             PerformanceCounter cpuCounter = new PerformanceCounter("Processor", "% Processor Time", "_Total");
@@ -156,6 +131,55 @@ namespace Vault
             dispatcherTimer.Interval = new TimeSpan(0, 0, 1);
             dispatcherTimer.Start();
             welcomeGrid.Visibility = Visibility.Visible;
+        }
+
+        public struct SettingsModel
+        {
+            public ObservableCollection<string> beatFolders { get; set; }
+            public ObservableCollection<string> sampleFolders { get; set; }
+            public string Theme { get; set; }
+            public System.Drawing.Color AccentColor { get; set; }
+            public void Save()
+            {
+                XmlSerializer xs = new XmlSerializer(this.GetType());
+                using (StreamWriter wr = new StreamWriter("settings.xml"))
+                {
+                    xs.Serialize(wr, this);
+                }
+            }
+            public void Load()
+            {
+                try
+                {
+                    XmlSerializer xs = new XmlSerializer(this.GetType());
+                    using (StreamReader rd = new StreamReader("settings.xml"))
+                    {
+                        SettingsModel tmp = (SettingsModel) xs.Deserialize(rd);
+                        this.beatFolders = tmp.beatFolders;
+                        this.sampleFolders = tmp.sampleFolders;
+                        this.Theme = tmp.Theme;
+                        this.AccentColor = tmp.AccentColor;
+                        Console.WriteLine("Settings Loaded");
+                    }
+                } catch (Exception ee) { 
+                    Console.WriteLine("No settings.xml... Creating One!"); 
+                    beatFolders = new ObservableCollection<string>();
+                    sampleFolders = new ObservableCollection<string>();
+                    Theme = "Dark"; 
+                    Save();
+                }
+            }
+
+            public static SettingsModel init()
+            {
+                SettingsModel sm = new SettingsModel
+                {
+                    beatFolders = new ObservableCollection<string>(),
+                    sampleFolders = new ObservableCollection<string>(),
+                    Theme = "Dark",
+                };
+                return sm;
+            }
         }
         public struct AudioDataModel
         {
@@ -255,7 +279,7 @@ namespace Vault
             accentColorSelector.IsEnabled = true;
             SolidColorBrush mySolidColorBrush = new SolidColorBrush();
             SolidColorBrush mySolidColorBrush2 = new SolidColorBrush();
-            if (Properties.Settings.Default.Theme == "Light")
+            if (Settings.Theme == "Light")
             {
                 ThemeManager.Current.ApplicationTheme = ApplicationTheme.Light;
                 mySolidColorBrush.Color = Color.FromArgb(255, 255, 255, 255);
@@ -263,7 +287,7 @@ namespace Vault
                 lightThemeBtn.IsChecked = true;
                 this.Background = mySolidColorBrush;
             }
-            else if (Properties.Settings.Default.Theme == "Dark")
+            else if (Settings.Theme == "Dark")
             {
                 ThemeManager.Current.ApplicationTheme = ApplicationTheme.Dark;
                 mySolidColorBrush.Color = Color.FromArgb(255, 28, 28, 28);
@@ -272,7 +296,7 @@ namespace Vault
                 this.Background = mySolidColorBrush;
             }
             
-            if(Properties.Settings.Default.Theme == "Mica")
+            if(Settings.Theme == "Mica")
             {
                 ThemeManager.Current.ApplicationTheme = ApplicationTheme.Dark;
                 mySolidColorBrush.Color = Color.FromArgb(255, 28, 28, 28);
@@ -299,7 +323,7 @@ namespace Vault
 
             try
             {
-                if (!Properties.Settings.Default.AccentColor.IsEmpty && Properties.Settings.Default.Theme != "Mica")
+                if (!Properties.Settings.Default.AccentColor.IsEmpty && Settings.Theme != "Mica")
                 {
                     System.Windows.Media.Color primary = System.Windows.Media.Color.FromArgb(Properties.Settings.Default.AccentColor.A, Properties.Settings.Default.AccentColor.R, Properties.Settings.Default.AccentColor.G, Properties.Settings.Default.AccentColor.B);
                     SolidColorBrush primaryColorBrush = new SolidColorBrush();
@@ -315,8 +339,9 @@ namespace Vault
             await Dispatcher.BeginInvoke(new Action(() => {
                 sampleLoadingPanel.Visibility = Visibility.Visible;
             }));
-            List<string> sampleFolders = Properties.Settings.Default.sampleLibraryPath.Split(',').Where(x => x.Trim().Length > 0).ToList();
-            List<string> sampleFoldersAll = Properties.Settings.Default.sampleLibraryPath.Split(',').Where(x => x.Trim().Length > 0).ToList();
+            Console.WriteLine("Getting Samples");
+            List<string> sampleFolders = new List<string>(Settings.sampleFolders);
+            List<string> sampleFoldersAll = new List<string>(Settings.sampleFolders);
             foreach (string s in sampleFolders)
             {
                 foreach (string d in Directory.GetDirectories(s, "*.*", SearchOption.AllDirectories))
@@ -394,8 +419,8 @@ namespace Vault
             await Dispatcher.BeginInvoke(new Action(() => {
                 beatLoadingPanel.Visibility = Visibility.Visible;
             }));
-            string[] beatFolders = Properties.Settings.Default.beatLibraryPath.Split(',').Where(x => x.Trim().Length > 0).ToArray();
-            foreach (string s in beatFolders)
+            Console.WriteLine("Getting Beats");
+            foreach (string s in Settings.beatFolders)
             {
                 //Grabs all files from FileDirectory
                 string[] files;
@@ -936,6 +961,8 @@ namespace Vault
                 window.Close();
 
                 System.Drawing.Color primary = System.Drawing.Color.FromArgb(picker.SelectedBrush.Color.A, picker.SelectedBrush.Color.R, picker.SelectedBrush.Color.G, picker.SelectedBrush.Color.B);
+                Settings.AccentColor = primary;
+                Settings.Save();
                 Properties.Settings.Default.AccentColor = primary;
                 Properties.Settings.Default.Save();
             };
@@ -943,6 +970,8 @@ namespace Vault
                 window.Close();
                 System.Drawing.Color defaultColor = System.Drawing.Color.FromArgb(primaryOld.A, primaryOld.R, primaryOld.G, primaryOld.B);
                 Properties.Settings.Default.AccentColor = defaultColor;
+                Settings.AccentColor = defaultColor;
+                Settings.Save();
                 Properties.Settings.Default.Save();
                 SolidColorBrush primaryColorBrush = new SolidColorBrush();
                 primaryColorBrush.Color = primaryOld;
@@ -955,8 +984,8 @@ namespace Vault
         {
             System.Windows.Media.Color defaultColor = System.Windows.Media.Color.FromArgb(255, 50, 108, 243);
             System.Drawing.Color defaultColor2 = System.Drawing.Color.FromArgb(255, 50, 108, 243);
-            Properties.Settings.Default.AccentColor = defaultColor2;
-            Properties.Settings.Default.Save();
+            Settings.AccentColor = defaultColor2;
+            Settings.Save();
             SolidColorBrush primaryColorBrush = new SolidColorBrush();
             primaryColorBrush.Color = defaultColor;
             Application.Current.Resources["DarkPrimaryBrush"] = primaryColorBrush;
@@ -966,17 +995,18 @@ namespace Vault
         {
             if (lightThemeBtn.IsChecked.GetValueOrDefault())
             {
-                Properties.Settings.Default.Theme = "Light";
+                Settings.Theme = "Light";
             }
             else if (darkThemeBtn.IsChecked.GetValueOrDefault())
             {
-                Properties.Settings.Default.Theme = "Dark";
+                Settings.Theme = "Dark";
             }
             else if (micaThemeBtn.IsChecked.GetValueOrDefault())
             {
-                Properties.Settings.Default.Theme = "Mica";
+                Settings.Theme = "Mica";
             }
             Properties.Settings.Default.Save();
+            Settings.Save();
             updateTheme();
         }
         private async void reloadLibraries_Click(object sender, RoutedEventArgs e)
@@ -988,7 +1018,7 @@ namespace Vault
         }
         private void saveSettingsBtn_Click(object sender, RoutedEventArgs e)
         {
-            Properties.Settings.Default.Save();
+            Settings.Save();
             HandyControl.Controls.MessageBox.Show("Settings have been applied!\nSome settings (Folder Locations) require a restart to apply.", "Settings Applied!");
         }
         private void addSampleFolder_Click(object sender, RoutedEventArgs e)
@@ -996,34 +1026,16 @@ namespace Vault
             var dialog = new FolderBrowserDialog();
             if (dialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)
             {
-                sampleFoldersList.Items.Add(new ListBoxItem()
-                {
-                    Content = dialog.SelectedPath
-                });
+                Settings.sampleFolders.Add(dialog.SelectedPath);
+                Settings.Save();
             }
-
-            string[] sampleFolders = new string[sampleFoldersList.Items.Count];
-            for (int i = 0; i < sampleFolders.Length; i++)
-            {
-                ListBoxItem item = (ListBoxItem)sampleFoldersList.Items[i];
-                sampleFolders[i] = item.Content.ToString();
-            }
-            Properties.Settings.Default.sampleLibraryPath = String.Join(",", sampleFolders);
-            Properties.Settings.Default.Save();
         }
         private void removeSampleFolder_Click(object sender, RoutedEventArgs e)
         {
             if (sampleFoldersList.SelectedItem != null)
             {
-                sampleFoldersList.Items.Remove(sampleFoldersList.SelectedItem);
-                string[] sampleFolders = new string[sampleFoldersList.Items.Count];
-                for (int i = 0; i < sampleFolders.Length; i++)
-                {
-                    ListBoxItem item = (ListBoxItem)sampleFoldersList.Items[i];
-                    sampleFolders[i] = item.Content.ToString();
-                }
-                Properties.Settings.Default.sampleLibraryPath = String.Join(",", sampleFolders);
-                Properties.Settings.Default.Save();
+                Settings.sampleFolders.Remove((string)sampleFoldersList.SelectedItem);
+                Settings.Save();
             }
         }
         private void addBeatFolder_Click(object sender, RoutedEventArgs e)
@@ -1031,34 +1043,16 @@ namespace Vault
             var dialog = new FolderBrowserDialog();
             if (dialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)
             {
-                beatFoldersList.Items.Add(new ListBoxItem()
-                {
-                    Content = dialog.SelectedPath
-                });
+                Settings.beatFolders.Add(dialog.SelectedPath);
+                Settings.Save();
             }
-
-            string[] beatFolders = new string[beatFoldersList.Items.Count];
-            for (int i = 0; i < beatFolders.Length; i++)
-            {
-                ListBoxItem item = (ListBoxItem)beatFoldersList.Items[i];
-                beatFolders[i] = item.Content.ToString();
-            }
-            Properties.Settings.Default.beatLibraryPath = String.Join(",", beatFolders);
-            Properties.Settings.Default.Save();
         }
         private void removeBeatFolder_Click(object sender, RoutedEventArgs e)
         {
             if (beatFoldersList.SelectedItem != null)
             {
-                beatFoldersList.Items.Remove(beatFoldersList.SelectedItem);
-                string[] beatFolders = new string[beatFoldersList.Items.Count];
-                for (int i = 0; i < beatFolders.Length; i++)
-                {
-                    ListBoxItem item = (ListBoxItem)beatFoldersList.Items[i];
-                    beatFolders[i] = item.Content.ToString();
-                }
-                Properties.Settings.Default.beatLibraryPath = String.Join(",", beatFolders);
-                Properties.Settings.Default.Save();
+                Settings.beatFolders.Remove((string)beatFoldersList.SelectedItem);
+                Settings.Save();
             }
         }
 
@@ -1140,7 +1134,7 @@ namespace Vault
                 try
                 {
                     var sample = (YoutubeVideoModel)ytSampleSelector.SelectedItem;
-                    ytBrowser.Source = new Uri("https://www.youtube-nocookie.com/embed/" + sample.id + "?rel=0&amp;showinfo=0");
+                    ytBrowser.Source = new Uri("https://www.youtube.com/embed/" + sample.id);
                     sampleNumber.Content = ytSampleSelector.SelectedIndex + 1 + " of " + YoutubeVideoDatas.Count;
                     ytsampleRate.Value = sample.rating;
                 }
