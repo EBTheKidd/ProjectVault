@@ -8,8 +8,8 @@
         xmlns:wv2="clr-namespace:Microsoft.Web.WebView2.Wpf;assembly=Microsoft.Web.WebView2.Wpf"
         xmlns:local="clr-namespace:Vault"
         mc:Ignorable="d"
-        Title="Vault" 
-        Height="600" MinHeight="600"
+        Title="Vault v0.2.1" 
+        Height="650" MinHeight="650"
         Width="1000" MinWidth="1000"
         WindowStartupLocation="CenterScreen"
         ResizeMode="CanResizeWithGrip">
@@ -20,68 +20,88 @@
     </Window.Resources>
     <Grid>
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="Auto"/>
             <ColumnDefinition Width="*"/>
         </Grid.ColumnDefinitions>
         <Grid.RowDefinitions>
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
+        <!-- Growl Holder -->
         <ScrollViewer VerticalScrollBarVisibility="Hidden" HorizontalAlignment="Right">
             <StackPanel hc:Growl.GrowlParent="True" VerticalAlignment="Top" Margin="0,10,10,10"/>
         </ScrollViewer>
-        <hc:SideMenu AutoSelect="True" Grid.Column="0" Grid.Row="0" BorderThickness="0" Width="150" VerticalAlignment="Stretch" x:Name="sideMenu" SelectionChanged="sideMenu_SelectionChanged">
-            <hc:SideMenuItem Header="Home" x:Name="homeMenu" IsSelected="True">
-                <hc:SideMenuItem.Icon>
-                    <fa:FontAwesomeIcon SolidIcon="Home" FontSize="15" Foreground="{DynamicResource DarkPrimaryBrush}"/>
-                </hc:SideMenuItem.Icon>
-            </hc:SideMenuItem>
-            <hc:SideMenuItem Header="Beats">
-                <hc:SideMenuItem.Icon>
-                    <fa:FontAwesomeIcon SolidIcon="Music" FontSize="15" Foreground="{DynamicResource DarkPrimaryBrush}"/>
-                </hc:SideMenuItem.Icon>
-                <hc:SideMenuItem Header="Library" x:Name="beatLibraryMenu">
-                    <hc:SideMenuItem.Icon>
-                        <fa:FontAwesomeIcon SolidIcon="Folder" FontSize="15" Foreground="{DynamicResource DarkPrimaryBrush}"/>
-                    </hc:SideMenuItem.Icon>
-                </hc:SideMenuItem>
-                <hc:SideMenuItem Header="Packs" x:Name="beatPacksMenu">
-                    <hc:SideMenuItem.Icon>
-                        <fa:FontAwesomeIcon SolidIcon="Compress" FontSize="15" Foreground="{DynamicResource DarkPrimaryBrush}"/>
-                    </hc:SideMenuItem.Icon>
-                </hc:SideMenuItem>
-            </hc:SideMenuItem>
-            <hc:SideMenuItem Header="Samples">
-                <hc:SideMenuItem.Icon>
-                    <fa:FontAwesomeIcon SolidIcon="Guitar" FontSize="15" Foreground="{DynamicResource DarkPrimaryBrush}"/>
-                </hc:SideMenuItem.Icon>
-                <hc:SideMenuItem Header="Library" x:Name="sampleLibraryMenu">
-                    <hc:SideMenuItem.Icon>
-                        <fa:FontAwesomeIcon SolidIcon="Folder" FontSize="15" Foreground="{DynamicResource DarkPrimaryBrush}"/>
-                    </hc:SideMenuItem.Icon>
-                </hc:SideMenuItem>
-                <hc:SideMenuItem Header="Sample Finder" x:Name="sampleFinderMenu">
-                    <hc:SideMenuItem.Icon>
-                        <fa:FontAwesomeIcon SolidIcon="Search" FontSize="15" Foreground="{DynamicResource DarkPrimaryBrush}"/>
-                    </hc:SideMenuItem.Icon>
-                </hc:SideMenuItem>
-            </hc:SideMenuItem>
-            <hc:SideMenuItem Header="Marketing" x:Name="marketingMenu" Visibility="Collapsed">
-                <hc:SideMenuItem.Icon>
-                    <fa:FontAwesomeIcon SolidIcon="DollarSign" FontSize="15" Foreground="{DynamicResource DarkPrimaryBrush}"/>
-                </hc:SideMenuItem.Icon>
-            </hc:SideMenuItem>
-            <hc:SideMenuItem Header="Settings" x:Name="settingsMenu">
-                <hc:SideMenuItem.Icon>
-                    <fa:FontAwesomeIcon SolidIcon="Cog" FontSize="15" Foreground="{DynamicResource DarkPrimaryBrush}"/>
-                </hc:SideMenuItem.Icon>
-            </hc:SideMenuItem>
-        </hc:SideMenu>
-        <Button IsEnabled="False" Grid.Column="0" Margin="5" Style="{DynamicResource ButtonPrimary}" BorderThickness="0" VerticalAlignment="Bottom" HorizontalAlignment="Stretch" x:Name="nowPlayingBtn" Click="nowPlayingBtn_Click">
-            <hc:UniformSpacingPanel Orientation="Horizontal" Spacing="5">
-                <TextBlock Text="Now Playing" FontSize="14"/>
-                <fa:FontAwesomeIcon SolidIcon="ArrowUp" FontSize="18"/>
-            </hc:UniformSpacingPanel>
-        </Button>
+        
+        <!-- Btns -->
+        <hc:UniformSpacingPanel Orientation="Horizontal" Spacing="5" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="8" Panel.ZIndex="9999">
+            <Button x:Name="toggleSideMenuBtn" Click="toggleSideMenuBtn_Click" Style="{DynamicResource ButtonPrimary}">
+                <fa:FontAwesomeIcon SolidIcon="Bars" FontSize="15"  />
+            </Button>
+            <Button IsEnabled="False" Style="{DynamicResource ButtonPrimary}" x:Name="nowPlayingBtn" Click="nowPlayingBtn_Click">
+                <fa:FontAwesomeIcon SolidIcon="Music" FontSize="15" Padding="0" />
+            </Button>
+        </hc:UniformSpacingPanel>
+
+        <!-- Drawers -->
+        <hc:Drawer Dock="Left" Grid.Column="1" Grid.RowSpan="2" Name="sideMenuDrawer" MaskCanClose="True">
+            <Border Background="{DynamicResource RegionBrush}" BorderThickness="0">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition/>
+                    </Grid.RowDefinitions>
+                    <TextBlock Padding="29, 10" Grid.Row="0" Text="Vault" Background="{DynamicResource DarkPrimaryBrush}" HorizontalAlignment="Center" FontSize="36" FontStyle="Italic" FontStretch="ExtraExpanded" FontWeight="Bold" FontFamily="Seoige UI" TextOptions.TextFormattingMode="Display"/>
+                    <hc:SideMenu AutoSelect="True" Grid.Row="1" BorderThickness="0" Width="150" VerticalAlignment="Stretch" x:Name="sideMenu" SelectionChanged="sideMenu_SelectionChanged">
+                        <hc:SideMenuItem Header="Home" x:Name="homeMenu" IsSelected="True">
+                            <hc:SideMenuItem.Icon>
+                                <fa:FontAwesomeIcon SolidIcon="Home" FontSize="15" Foreground="{DynamicResource DarkPrimaryBrush}"/>
+                            </hc:SideMenuItem.Icon>
+                        </hc:SideMenuItem>
+                        <hc:SideMenuItem Header="Beats">
+                            <hc:SideMenuItem.Icon>
+                                <fa:FontAwesomeIcon SolidIcon="Music" FontSize="15" Foreground="{DynamicResource DarkPrimaryBrush}"/>
+                            </hc:SideMenuItem.Icon>
+                            <hc:SideMenuItem Header="Library" x:Name="beatLibraryMenu">
+                                <hc:SideMenuItem.Icon>
+                                    <fa:FontAwesomeIcon SolidIcon="Folder" FontSize="15" Foreground="{DynamicResource DarkPrimaryBrush}"/>
+                                </hc:SideMenuItem.Icon>
+                            </hc:SideMenuItem>
+                            <hc:SideMenuItem Header="Packs" x:Name="beatPacksMenu">
+                                <hc:SideMenuItem.Icon>
+                                    <fa:FontAwesomeIcon SolidIcon="Compress" FontSize="15" Foreground="{DynamicResource DarkPrimaryBrush}"/>
+                                </hc:SideMenuItem.Icon>
+                            </hc:SideMenuItem>
+                        </hc:SideMenuItem>
+                        <hc:SideMenuItem Header="Samples">
+                            <hc:SideMenuItem.Icon>
+                                <fa:FontAwesomeIcon SolidIcon="Guitar" FontSize="15" Foreground="{DynamicResource DarkPrimaryBrush}"/>
+                            </hc:SideMenuItem.Icon>
+                            <hc:SideMenuItem Header="Library" x:Name="sampleLibraryMenu">
+                                <hc:SideMenuItem.Icon>
+                                    <fa:FontAwesomeIcon SolidIcon="Folder" FontSize="15" Foreground="{DynamicResource DarkPrimaryBrush}"/>
+                                </hc:SideMenuItem.Icon>
+                            </hc:SideMenuItem>
+                            <hc:SideMenuItem Header="Sample Finder" x:Name="sampleFinderMenu">
+                                <hc:SideMenuItem.Icon>
+                                    <fa:FontAwesomeIcon SolidIcon="Search" FontSize="15" Foreground="{DynamicResource DarkPrimaryBrush}"/>
+                                </hc:SideMenuItem.Icon>
+                            </hc:SideMenuItem>
+                        </hc:SideMenuItem>
+                        <hc:SideMenuItem Header="Albums" x:Name="albumMenu" >
+                            <hc:SideMenuItem.Icon>
+                                <fa:FontAwesomeIcon SolidIcon="Music" FontSize="15" Foreground="{DynamicResource DarkPrimaryBrush}"/>
+                            </hc:SideMenuItem.Icon>
+                        </hc:SideMenuItem>
+                        <hc:SideMenuItem Header="Settings" x:Name="settingsMenu">
+                            <hc:SideMenuItem.Icon>
+                                <fa:FontAwesomeIcon SolidIcon="Cog" FontSize="15" Foreground="{DynamicResource DarkPrimaryBrush}"/>
+                            </hc:SideMenuItem.Icon>
+                        </hc:SideMenuItem>
+                    </hc:SideMenu>
+
+                </Grid>
+            </Border>
+        </hc:Drawer>
         <hc:Drawer Dock="Bottom" Grid.Column="1" Grid.RowSpan="2" Name="audioPlayerDrawer" MaskCanClose="True">
             <Border Margin="10" Background="{DynamicResource RegionBrush}" BorderThickness="0" CornerRadius="5">
                 <Border.Effect>
@@ -157,6 +177,8 @@
                 </Grid>
             </Border>
         </hc:Drawer>
+        
+        <!-- Pages-->
         <Grid Grid.Column="1" Grid.Row="0" x:Name="welcomeGrid" Visibility="Collapsed">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="Auto"/>
@@ -184,8 +206,8 @@
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="*"/>
             </Grid.RowDefinitions>
-            <Label Content="Beat Library" FontSize="25" Foreground="{DynamicResource DarkPrimaryBrush}" BorderThickness="0" Background="{x:Null}"/>
-            <hc:SearchBar Margin="5" TextChanged="beatSearch_TextChanged" Grid.Column="1" Grid.Row="0"/>
+            <Label Grid.Column="1" HorizontalAlignment="Center" Content="Beat Library" FontSize="25" Foreground="{DynamicResource DarkPrimaryBrush}" BorderThickness="0" Background="{x:Null}"/>
+            <hc:SearchBar Margin="5" TextChanged="beatSearch_TextChanged" Grid.Column="1" Grid.Row="0" Width="200" HorizontalAlignment="Right"/>
             
             <DataGrid Grid.Column="0" Grid.Row="1" Grid.ColumnSpan="2" x:Name="beatDataTable" HeadersVisibility="Column" hc:DataGridAttach.ShowRowNumber="True" RowHeaderWidth="60" ColumnHeaderHeight="30" AutoGenerateColumns="False" ItemsSource="{Binding BeatDatas, UpdateSourceTrigger=Default, RelativeSource={RelativeSource AncestorType=Window}}" HorizontalScrollBarVisibility="Hidden" SelectionMode="Single">
                 <DataGrid.RowHeaderTemplate>
@@ -230,7 +252,7 @@
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="*"/>
             </Grid.RowDefinitions>
-            <Label Content="Beat Packs" FontSize="25" Foreground="{DynamicResource DarkPrimaryBrush}" BorderThickness="0" Background="{x:Null}"/>
+            <Label Content="Beat Packs" Grid.ColumnSpan="2" HorizontalAlignment="Center" FontSize="25" Foreground="{DynamicResource DarkPrimaryBrush}" BorderThickness="0" Background="{x:Null}"/>
             <TabControl Grid.Row="1" Grid.ColumnSpan="2">
                 <TabItem Header="Create/Edit Beat Pack" x:Name="createEditBeatPacksTab">
                     <Grid>
@@ -324,8 +346,8 @@
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="*"/>
             </Grid.RowDefinitions>
-            <Label Content="Sample Library" FontSize="25" Foreground="{DynamicResource DarkPrimaryBrush}" BorderThickness="0" Background="{x:Null}"/>
-            <hc:SearchBar Grid.Column="1" Grid.Row="0" TextChanged="sampleSearch_TextChanged" Margin="5"/>
+            <Label Content="Sample Library" Grid.ColumnSpan="2" HorizontalAlignment="Center" FontSize="25" Foreground="{DynamicResource DarkPrimaryBrush}" BorderThickness="0" Background="{x:Null}"/>
+            <hc:SearchBar Grid.Column="1" Grid.Row="0" TextChanged="sampleSearch_TextChanged" Margin="5" HorizontalAlignment="Right" Width="200"/>
             <DataGrid Grid.Column="0" Grid.Row="1" Grid.ColumnSpan="2" x:Name="sampleDataTable" HeadersVisibility="Column" hc:DataGridAttach.ShowRowNumber="True" RowHeaderWidth="60" ColumnHeaderHeight="30" AutoGenerateColumns="False" ItemsSource="{Binding SampleDatas, UpdateSourceTrigger=Default, RelativeSource={RelativeSource AncestorType=Window}}" HorizontalScrollBarVisibility="Hidden" SelectionMode="Single">
                 <DataGrid.RowHeaderTemplate>
                     <DataTemplate>
@@ -371,7 +393,7 @@
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="*"/>
             </Grid.RowDefinitions>
-            <Label Content="Sample Finder" HorizontalAlignment="Left" FontSize="25" Foreground="{DynamicResource DarkPrimaryBrush}" BorderThickness="0" Background="{x:Null}"/>
+            <Label Grid.ColumnSpan="2" HorizontalAlignment="Center" Content="Sample Finder" FontSize="25" Foreground="{DynamicResource DarkPrimaryBrush}" BorderThickness="0" Background="{x:Null}"/>
             <hc:LoadingCircle x:Name="loadingVideo" Visibility="Collapsed" Grid.Column="2" Width="25" Height="25" HorizontalAlignment="Right" Margin="10"/>
             
             <hc:UniformSpacingPanel Orientation="Horizontal" Spacing="5" Grid.Row="1" Margin="5">
@@ -405,7 +427,7 @@
             </hc:UniformSpacingPanel>
             <wv2:WebView2 Margin="5" Grid.Row="4" Grid.ColumnSpan="2" x:Name="ytBrowser" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"/>
         </Grid>
-        <Grid Grid.Column="1" Grid.Row="0" x:Name="marketingGrid" Visibility="Collapsed">
+        <Grid Grid.Column="1" Grid.Row="0" x:Name="albumGrid" Visibility="Collapsed">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="Auto"/>
                 <ColumnDefinition Width="*"/>
@@ -414,7 +436,10 @@
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="*"/>
             </Grid.RowDefinitions>
-            <Label Content="Marketing" FontSize="25" Foreground="{DynamicResource DarkPrimaryBrush}" BorderThickness="0" Background="{x:Null}"/>
+            <Label Content="Albums" Grid.ColumnSpan="2" HorizontalAlignment="Center" FontSize="25" Foreground="{DynamicResource DarkPrimaryBrush}" BorderThickness="0" Background="{x:Null}"/>
+
+            <hc:CoverView Grid.Row="1" Grid.ColumnSpan="2" x:Name="albumsView"/>
+
         </Grid>
         <Grid Grid.Column="1" Grid.Row="0" x:Name="settingsGrid" Visibility="Collapsed">
             <Grid.ColumnDefinitions>
@@ -425,7 +450,7 @@
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="*"/>
             </Grid.RowDefinitions>
-            <Label Content="Settings" HorizontalContentAlignment="Left" FontSize="25" Foreground="{DynamicResource DarkPrimaryBrush}" BorderThickness="0" Background="{x:Null}"/>
+            <Label Content="Settings" Grid.ColumnSpan="2" HorizontalAlignment="Center" FontSize="25" Foreground="{DynamicResource DarkPrimaryBrush}" BorderThickness="0" Background="{x:Null}"/>
             <ScrollViewer Grid.Row="1" Grid.ColumnSpan="2">
                 <hc:UniformSpacingPanel Orientation="Vertical"  Spacing="5" Margin="5">
                     <Expander Header="Beat/Sample Libraries" BorderThickness="1" BorderBrush="{DynamicResource BorderBrush}" IsExpanded="True" >
@@ -463,6 +488,22 @@
                                 </hc:UniformSpacingPanel>
                             </hc:UniformSpacingPanel>
                             <hc:UniformSpacingPanel Orientation="Vertical" Spacing="5">
+                                <Label Content="Album Folders" Width="200"/>
+                                <ListBox Height="100" x:Name="albumFoldersList">
+                                    <ListBox.ItemTemplate>
+                                        <DataTemplate>
+                                            <StackPanel Orientation="Horizontal">
+                                                <TextBlock Text="{Binding}" />
+                                            </StackPanel>
+                                        </DataTemplate>
+                                    </ListBox.ItemTemplate>
+                                </ListBox>
+                                <hc:UniformSpacingPanel Orientation="Horizontal" Spacing="5">
+                                    <Button Content="Add" Click="addAlbumFolder_Click"/>
+                                    <Button Content="Remove" Click="removeAlbumFolder_Click"/>
+                                </hc:UniformSpacingPanel>
+                            </hc:UniformSpacingPanel>
+                            <hc:UniformSpacingPanel Orientation="Vertical" Spacing="5">
                                 <hc:UniformSpacingPanel Orientation="Horizontal" Spacing="5" IsEnabled="False">
                                     <ToggleButton Style="{StaticResource ToggleButtonSwitch}"/>
                                     <Label Content="Public Sample Library" BorderThickness="0" Background="{x:Null}" />
@@ -495,6 +536,10 @@
                 <StackPanel Orientation="Horizontal" x:Name="sampleLoadingPanel">
                     <ProgressBar x:Name="sampleLibraryLoading" Width="300"/>
                     <Label BorderThickness="0" Background="{x:Null}" x:Name="sampleLibraryLoadingLabel" Content="Loading Samples..." Foreground="{DynamicResource DarkPrimaryBrush}" />
+                </StackPanel>
+                <StackPanel Orientation="Horizontal" x:Name="albumLoadingPanel">
+                    <ProgressBar x:Name="albumLibraryLoading" Width="300"/>
+                    <Label BorderThickness="0" Background="{x:Null}" x:Name="albumLibraryLoadingLabel" Content="Loading Samples..." Foreground="{DynamicResource DarkPrimaryBrush}" />
                 </StackPanel>
                 <StackPanel Orientation="Horizontal">
                     <ProgressBar x:Name="ramUsage" Width="300"/>

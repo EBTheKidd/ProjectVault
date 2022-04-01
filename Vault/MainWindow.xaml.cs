@@ -56,6 +56,7 @@ namespace Vault
         public static ObservableCollection<BeatPackModel> BeatPackDatas { get; set; } = new ObservableCollection<BeatPackModel>();
         public static ObservableCollection<AudioDataModel> BeatDatas { get; set; } = new ObservableCollection<AudioDataModel>();
         public static ObservableCollection<AudioDataModel> SampleDatas { get; set; } = new ObservableCollection<AudioDataModel>();
+        public static ObservableCollection<AlbumModel> AlbumDatas { get; set; } = new ObservableCollection<AlbumModel>();
         public static ObservableCollection<YoutubeVideoModel> YoutubeVideoDatas { get; set; } = new ObservableCollection<YoutubeVideoModel>();
         public MainWindow()
         {
@@ -84,8 +85,10 @@ namespace Vault
             // load initial data (libraries, etc...)
             beatFoldersList.ItemsSource = Settings.beatFolders;
             sampleFoldersList.ItemsSource = Settings.sampleFolders;
+            albumFoldersList.ItemsSource = Settings.albumFolders;
             Task.Run(async () => getBeats());
             Task.Run(async () => getSamples());
+            Task.Run(async () => getAlbums());
 
             // Start data monitors (ram, cpu, now playing...)
             PerformanceCounter cpuCounter = new PerformanceCounter("Processor", "% Processor Time", "_Total");
@@ -137,6 +140,7 @@ namespace Vault
         {
             public ObservableCollection<string> beatFolders { get; set; }
             public ObservableCollection<string> sampleFolders { get; set; }
+            public ObservableCollection<string> albumFolders { get; set; }
             public string Theme { get; set; }
             public System.Drawing.Color AccentColor { get; set; }
             public void Save()
@@ -157,6 +161,7 @@ namespace Vault
                         SettingsModel tmp = (SettingsModel) xs.Deserialize(rd);
                         this.beatFolders = tmp.beatFolders;
                         this.sampleFolders = tmp.sampleFolders;
+                        this.albumFolders = tmp.albumFolders;
                         this.Theme = tmp.Theme;
                         this.AccentColor = tmp.AccentColor;
                         Console.WriteLine("Settings Loaded");
@@ -165,6 +170,7 @@ namespace Vault
                     Console.WriteLine("No settings.xml... Creating One!"); 
                     beatFolders = new ObservableCollection<string>();
                     sampleFolders = new ObservableCollection<string>();
+                    albumFolders = new ObservableCollection<string>();
                     Theme = "Dark"; 
                     Save();
                 }
@@ -228,6 +234,12 @@ namespace Vault
                 }
                 return String.Join(",", titles);
             }
+        }
+        public struct AlbumModel
+        {
+            public string Title { get; set; }
+            public ObservableCollection<AudioDataModel> Songs { get; set; }
+            public string artworkPath { get; set; }
         }
         public static void SaveBeatPacks()
         {
@@ -333,6 +345,106 @@ namespace Vault
                 }
             }
             catch (Exception e) { }
+        }
+        public async void getAlbums()
+        {
+            await Dispatcher.BeginInvoke(new Action(() => {
+                albumLoadingPanel.Visibility = Visibility.Visible;
+            }));
+            Console.WriteLine("Getting Albums");
+            foreach (string s in Settings.albumFolders) // should be separate albums
+            {
+                AlbumModel newAlbum = new AlbumModel
+                {
+                    Title = s.Substring(s.LastIndexOf("\\")),
+                    artworkPath = s + "\\Cover.png",
+                    Songs = new ObservableCollection<AudioDataModel>()
+                };
+                //Grabs all files from FileDirectory
+                string[] files;
+                files = Directory.GetFiles(s);
+
+                await Dispatcher.BeginInvoke(new Action(() => {
+                    albumLibraryLoadingLabel.Content = "Loading albums In " + s;
+                    albumLibraryLoading.Maximum = files.Length - 1;
+                }));
+                //Checks all files and stores all WAV files into the Files list.
+                for (int i = 0; i < files.Length; i++)
+                {
+                    await Dispatcher.BeginInvoke(new Action(() => {
+                        albumLibraryLoading.Value = i;
+                    }));
+                    if (files[i].EndsWith(".wav") || files[i].EndsWith(".mp3"))
+                    {
+                        var tfile = TagLib.File.Create(files[i]);
+                        string title = tfile.Tag.Title;
+                        if (title == null || title.Length == 0)
+                        {
+                            title = System.IO.Path.GetFileNameWithoutExtension(files[i]);
+                        }
+
+                        string[] artist = new string[1];
+                        if (tfile.Tag.AlbumArtists == null)
+                        {
+                            artist[0] = "N/A";
+                        }
+                        else
+                        {
+                            artist = tfile.Tag.AlbumArtists;
+                        }
+                        AudioDataModel b = new AudioDataModel
+                        {
+                            Title = title,
+                            Artist = String.Join(",", artist),
+                            Album = tfile.Tag.Album,
+                            filePath = files[i],
+                            Bitrate = (string.Format("{0} Kbps", (int)tfile.Properties.AudioBitrate)),
+                            Description = (tfile.Properties.Description),
+                            BPM = (tfile.Tag.BeatsPerMinute),
+                            Duration = (string.Format("{0}:{1:00}", (int)tfile.Properties.Duration.TotalMinutes, tfile.Properties.Duration.Seconds))
+                        };
+                        await Dispatcher.BeginInvoke(new Action(() => {
+                            if (!newAlbum.Songs.Contains(b))
+                            {
+                                newAlbum.Songs.Add(b);
+                            }
+                        }));
+                    }
+                }
+
+
+
+
+                await Dispatcher.BeginInvoke(new Action(() => {
+                    
+                    BitmapImage artwork = new BitmapImage();
+                    try
+                    {
+                        artwork.BeginInit();
+                        artwork.UriSource = new Uri(newAlbum.artworkPath);
+                        artwork.EndInit();
+                    } catch (Exception e)
+                    {
+
+                    }
+
+
+                    StackPanel songsPanel = new StackPanel();
+                    foreach (AudioDataModel m in newAlbum.Songs)
+                    {
+                        songsPanel.Children.Add(new TextBlock { Text = m.Title });
+                    }
+                    albumsView.Items.Add(new HandyControl.Controls.CoverViewItem
+                    {
+                        Header = new Image { Source = artwork },
+                        Content = songsPanel
+                    });
+                }));
+            }
+
+            await Dispatcher.BeginInvoke(new Action(() => {
+                albumLoadingPanel.Visibility = Visibility.Collapsed;
+            }));
         }
         public async void getSamples()
         {
@@ -487,7 +599,7 @@ namespace Vault
             beatPacksGrid.Visibility = Visibility.Collapsed;
             sampleLibraryGrid.Visibility = Visibility.Collapsed;
             sampleFinderGrid.Visibility = Visibility.Collapsed;
-            marketingGrid.Visibility = Visibility.Collapsed;
+            albumGrid.Visibility = Visibility.Collapsed;
             settingsGrid.Visibility = Visibility.Collapsed;
             if (homeMenu.IsSelected)
             {
@@ -509,9 +621,9 @@ namespace Vault
             {
                 sampleFinderGrid.Visibility = Visibility.Visible;
             }
-            else if (marketingMenu.IsSelected)
+            else if (albumMenu.IsSelected)
             {
-                marketingGrid.Visibility = Visibility.Visible;
+                albumGrid.Visibility = Visibility.Visible;
             }
             else if (settingsMenu.IsSelected)
             {
@@ -726,9 +838,9 @@ namespace Vault
             editProperties.SelectedObject = editAudio;
             editBeatHeader.Text = editAudio.Title;
             audioEditDrawer.IsOpen = !audioEditDrawer.IsOpen;
-            var tfile = TagLib.File.Create(editAudio.filePath);
             try
             {
+                var tfile = TagLib.File.Create(editAudio.filePath);
                 var artwork = tfile.Tag.Pictures[0];
                 MemoryStream ms = new MemoryStream(artwork.Data.Data);
                 ms.Seek(0, SeekOrigin.Begin);
@@ -942,124 +1054,8 @@ namespace Vault
             }
         }
         #endregion
-        #region Settings
-        private void accentColorSelector_Click(object sender, RoutedEventArgs e)
-        {
-            System.Windows.Media.Color primaryOld = System.Windows.Media.Color.FromArgb(Properties.Settings.Default.AccentColor.A, Properties.Settings.Default.AccentColor.R, Properties.Settings.Default.AccentColor.G, Properties.Settings.Default.AccentColor.B);
-            Button thisbtn = (Button)sender;
-            var picker = SingleOpenHelper.CreateControl<HandyControl.Controls.ColorPicker>();
-            var window = new HandyControl.Controls.PopupWindow { PopupElement = picker };
-            picker.SelectedColorChanged += delegate {
-                Application.Current.Resources["DarkPrimaryBrush"] = picker.SelectedBrush;
-                Application.Current.Resources["PrimaryBrush"] = picker.SelectedBrush;
-                Application.Current.Resources["DarkAccentBrush"] = picker.SelectedBrush;
-                Application.Current.Resources["AccentBrush"] = picker.SelectedBrush;
-                Application.Current.Resources["AccentColor"] = primaryOld;
-
-            };
-            picker.Confirmed += delegate {
-                window.Close();
-
-                System.Drawing.Color primary = System.Drawing.Color.FromArgb(picker.SelectedBrush.Color.A, picker.SelectedBrush.Color.R, picker.SelectedBrush.Color.G, picker.SelectedBrush.Color.B);
-                Settings.AccentColor = primary;
-                Settings.Save();
-                Properties.Settings.Default.AccentColor = primary;
-                Properties.Settings.Default.Save();
-            };
-            picker.Canceled += delegate {
-                window.Close();
-                System.Drawing.Color defaultColor = System.Drawing.Color.FromArgb(primaryOld.A, primaryOld.R, primaryOld.G, primaryOld.B);
-                Properties.Settings.Default.AccentColor = defaultColor;
-                Settings.AccentColor = defaultColor;
-                Settings.Save();
-                Properties.Settings.Default.Save();
-                SolidColorBrush primaryColorBrush = new SolidColorBrush();
-                primaryColorBrush.Color = primaryOld;
-                Application.Current.Resources["DarkPrimaryBrush"] = primaryColorBrush;
-                Application.Current.Resources["PrimaryBrush"] = primaryColorBrush;
-            };
-            window.Show(thisbtn, false);
-        }
-        private void accentColorReset_Click(object sender, RoutedEventArgs e)
-        {
-            System.Windows.Media.Color defaultColor = System.Windows.Media.Color.FromArgb(255, 50, 108, 243);
-            System.Drawing.Color defaultColor2 = System.Drawing.Color.FromArgb(255, 50, 108, 243);
-            Settings.AccentColor = defaultColor2;
-            Settings.Save();
-            SolidColorBrush primaryColorBrush = new SolidColorBrush();
-            primaryColorBrush.Color = defaultColor;
-            Application.Current.Resources["DarkPrimaryBrush"] = primaryColorBrush;
-            Application.Current.Resources["PrimaryBrush"] = primaryColorBrush;
-        }
-        private void themeBtn_Click(object sender, RoutedEventArgs e)
-        {
-            if (lightThemeBtn.IsChecked.GetValueOrDefault())
-            {
-                Settings.Theme = "Light";
-            }
-            else if (darkThemeBtn.IsChecked.GetValueOrDefault())
-            {
-                Settings.Theme = "Dark";
-            }
-            else if (micaThemeBtn.IsChecked.GetValueOrDefault())
-            {
-                Settings.Theme = "Mica";
-            }
-            Properties.Settings.Default.Save();
-            Settings.Save();
-            updateTheme();
-        }
-        private async void reloadLibraries_Click(object sender, RoutedEventArgs e)
-        {
-            BeatDatas.Clear();
-            SampleDatas.Clear();
-            Task.Run(async () => getBeats());
-            Task.Run(async () => getSamples());
-        }
-        private void saveSettingsBtn_Click(object sender, RoutedEventArgs e)
-        {
-            Settings.Save();
-            HandyControl.Controls.MessageBox.Show("Settings have been applied!\nSome settings (Folder Locations) require a restart to apply.", "Settings Applied!");
-        }
-        private void addSampleFolder_Click(object sender, RoutedEventArgs e)
-        {
-            var dialog = new FolderBrowserDialog();
-            if (dialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)
-            {
-                Settings.sampleFolders.Add(dialog.SelectedPath);
-                Settings.Save();
-            }
-        }
-        private void removeSampleFolder_Click(object sender, RoutedEventArgs e)
-        {
-            if (sampleFoldersList.SelectedItem != null)
-            {
-                Settings.sampleFolders.Remove((string)sampleFoldersList.SelectedItem);
-                Settings.Save();
-            }
-        }
-        private void addBeatFolder_Click(object sender, RoutedEventArgs e)
-        {
-            var dialog = new FolderBrowserDialog();
-            if (dialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)
-            {
-                Settings.beatFolders.Add(dialog.SelectedPath);
-                Settings.Save();
-            }
-        }
-        private void removeBeatFolder_Click(object sender, RoutedEventArgs e)
-        {
-            if (beatFoldersList.SelectedItem != null)
-            {
-                Settings.beatFolders.Remove((string)beatFoldersList.SelectedItem);
-                Settings.Save();
-            }
-        }
-
-        #endregion
-
         #region Sample Finder
-        
+
         private async void nextRandomSample_Click(object sender, RoutedEventArgs e)
         {
             try { ytSampleSelector.SelectedIndex += 1; } catch (Exception eee) { }
@@ -1100,7 +1096,8 @@ namespace Vault
                     loadingVideo.Visibility = Visibility.Hidden;
                     HandyControl.Controls.Growl.SuccessGlobal(video.Title + " has been downloaded!");
                 }
-            } catch (Exception eee)
+            }
+            catch (Exception eee)
             {
                 Console.WriteLine(eee.StackTrace);
                 HandyControl.Controls.Growl.ErrorGlobal("There was an error downloading your file!");
@@ -1122,7 +1119,7 @@ namespace Vault
                 if (!tagPanel.Items.Contains(t))
                 {
                     tagPanel.Items.Add(t);
-                } 
+                }
             }
             tagSearchbox.Text = "";
         }
@@ -1223,12 +1220,149 @@ namespace Vault
                     Console.WriteLine(e2.StackTrace);
                     HandyControl.Controls.Growl.ErrorGlobal("There was an error with the youtube API. This likely means too many requests are being sent. Please try again later.");
                 }
-            } else
+            }
+            else
             {
                 HandyControl.Controls.Growl.WarningGlobal("Please Enter Some Search Tags!\n\nTip: You can use Youtube API querry parameters!\n('Instrumental|Acoustic' = Instrumental OR Acoustic, '-Jazz' Removes Jazz Results)");
             }
         }
         #endregion
+        #region Settings
+        private void accentColorSelector_Click(object sender, RoutedEventArgs e)
+        {
+            System.Windows.Media.Color primaryOld = System.Windows.Media.Color.FromArgb(Properties.Settings.Default.AccentColor.A, Properties.Settings.Default.AccentColor.R, Properties.Settings.Default.AccentColor.G, Properties.Settings.Default.AccentColor.B);
+            Button thisbtn = (Button)sender;
+            var picker = SingleOpenHelper.CreateControl<HandyControl.Controls.ColorPicker>();
+            var window = new HandyControl.Controls.PopupWindow { PopupElement = picker };
+            picker.SelectedColorChanged += delegate {
+                Application.Current.Resources["DarkPrimaryBrush"] = picker.SelectedBrush;
+                Application.Current.Resources["PrimaryBrush"] = picker.SelectedBrush;
+                Application.Current.Resources["DarkAccentBrush"] = picker.SelectedBrush;
+                Application.Current.Resources["AccentBrush"] = picker.SelectedBrush;
+                Application.Current.Resources["AccentColor"] = primaryOld;
+
+            };
+            picker.Confirmed += delegate {
+                window.Close();
+
+                System.Drawing.Color primary = System.Drawing.Color.FromArgb(picker.SelectedBrush.Color.A, picker.SelectedBrush.Color.R, picker.SelectedBrush.Color.G, picker.SelectedBrush.Color.B);
+                Settings.AccentColor = primary;
+                Settings.Save();
+                Properties.Settings.Default.AccentColor = primary;
+                Properties.Settings.Default.Save();
+            };
+            picker.Canceled += delegate {
+                window.Close();
+                System.Drawing.Color defaultColor = System.Drawing.Color.FromArgb(primaryOld.A, primaryOld.R, primaryOld.G, primaryOld.B);
+                Properties.Settings.Default.AccentColor = defaultColor;
+                Settings.AccentColor = defaultColor;
+                Settings.Save();
+                Properties.Settings.Default.Save();
+                SolidColorBrush primaryColorBrush = new SolidColorBrush();
+                primaryColorBrush.Color = primaryOld;
+                Application.Current.Resources["DarkPrimaryBrush"] = primaryColorBrush;
+                Application.Current.Resources["PrimaryBrush"] = primaryColorBrush;
+            };
+            window.Show(thisbtn, false);
+        }
+        private void accentColorReset_Click(object sender, RoutedEventArgs e)
+        {
+            System.Windows.Media.Color defaultColor = System.Windows.Media.Color.FromArgb(255, 50, 108, 243);
+            System.Drawing.Color defaultColor2 = System.Drawing.Color.FromArgb(255, 50, 108, 243);
+            Settings.AccentColor = defaultColor2;
+            Settings.Save();
+            SolidColorBrush primaryColorBrush = new SolidColorBrush();
+            primaryColorBrush.Color = defaultColor;
+            Application.Current.Resources["DarkPrimaryBrush"] = primaryColorBrush;
+            Application.Current.Resources["PrimaryBrush"] = primaryColorBrush;
+        }
+        private void themeBtn_Click(object sender, RoutedEventArgs e)
+        {
+            if (lightThemeBtn.IsChecked.GetValueOrDefault())
+            {
+                Settings.Theme = "Light";
+            }
+            else if (darkThemeBtn.IsChecked.GetValueOrDefault())
+            {
+                Settings.Theme = "Dark";
+            }
+            else if (micaThemeBtn.IsChecked.GetValueOrDefault())
+            {
+                Settings.Theme = "Mica";
+            }
+            Properties.Settings.Default.Save();
+            Settings.Save();
+            updateTheme();
+        }
+        private async void reloadLibraries_Click(object sender, RoutedEventArgs e)
+        {
+            BeatDatas.Clear();
+            SampleDatas.Clear();
+            AlbumDatas.Clear();
+            albumsView.Items.Clear();
+            Task.Run(async () => getBeats());
+            Task.Run(async () => getSamples());
+            Task.Run(async () => getAlbums());
+        }
+        private void saveSettingsBtn_Click(object sender, RoutedEventArgs e)
+        {
+            Settings.Save();
+            HandyControl.Controls.MessageBox.Show("Settings have been applied!\nSome settings (Folder Locations) require a restart to apply.", "Settings Applied!");
+        }
+        private void addSampleFolder_Click(object sender, RoutedEventArgs e)
+        {
+            var dialog = new FolderBrowserDialog();
+            if (dialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)
+            {
+                Settings.sampleFolders.Add(dialog.SelectedPath);
+                Settings.Save();
+            }
+        }
+        private void removeSampleFolder_Click(object sender, RoutedEventArgs e)
+        {
+            if (sampleFoldersList.SelectedItem != null)
+            {
+                Settings.sampleFolders.Remove((string)sampleFoldersList.SelectedItem);
+                Settings.Save();
+            }
+        }
+        private void addAlbumFolder_Click(object sender, RoutedEventArgs e)
+        {
+            var dialog = new FolderBrowserDialog();
+            if (dialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)
+            {
+                Settings.albumFolders.Add(dialog.SelectedPath);
+                Settings.Save();
+            }
+        }
+        private void removeAlbumFolder_Click(object sender, RoutedEventArgs e)
+        {
+            if (sampleFoldersList.SelectedItem != null)
+            {
+                Settings.albumFolders.Remove((string)albumFoldersList.SelectedItem);
+                Settings.Save();
+            }
+        }
+        private void addBeatFolder_Click(object sender, RoutedEventArgs e)
+        {
+            var dialog = new FolderBrowserDialog();
+            if (dialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)
+            {
+                Settings.beatFolders.Add(dialog.SelectedPath);
+                Settings.Save();
+            }
+        }
+        private void removeBeatFolder_Click(object sender, RoutedEventArgs e)
+        {
+            if (beatFoldersList.SelectedItem != null)
+            {
+                Settings.beatFolders.Remove((string)beatFoldersList.SelectedItem);
+                Settings.Save();
+            }
+        }
+
+        #endregion
+
         bool IsValidEmail(string email)
         {
             var trimmedEmail = email.Trim();
@@ -1248,5 +1382,9 @@ namespace Vault
             }
         }
 
+        private void toggleSideMenuBtn_Click(object sender, RoutedEventArgs e)
+        {
+            sideMenuDrawer.IsOpen = !sideMenuDrawer.IsOpen;
+        }
     }
 }
