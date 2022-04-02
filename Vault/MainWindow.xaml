@@ -8,7 +8,7 @@
         xmlns:wv2="clr-namespace:Microsoft.Web.WebView2.Wpf;assembly=Microsoft.Web.WebView2.Wpf"
         xmlns:local="clr-namespace:Vault"
         mc:Ignorable="d"
-        Title="Vault v0.2.1" 
+        Title="Vault [Alpha]" 
         Height="650" MinHeight="650"
         Width="1000" MinWidth="1000"
         WindowStartupLocation="CenterScreen"
@@ -35,151 +35,12 @@
             <Button x:Name="toggleSideMenuBtn" Click="toggleSideMenuBtn_Click" Style="{DynamicResource ButtonPrimary}">
                 <fa:FontAwesomeIcon SolidIcon="Bars" FontSize="15"  />
             </Button>
-            <Button IsEnabled="False" Style="{DynamicResource ButtonPrimary}" x:Name="nowPlayingBtn" Click="nowPlayingBtn_Click">
-                <fa:FontAwesomeIcon SolidIcon="Music" FontSize="15" Padding="0" />
-            </Button>
+            <Button Content="Now Playing" IsEnabled="False" Style="{DynamicResource ButtonPrimary}" x:Name="nowPlayingBtn" Click="nowPlayingBtn_Click"/>
         </hc:UniformSpacingPanel>
 
-        <!-- Drawers -->
-        <hc:Drawer Dock="Left" Grid.Column="1" Grid.RowSpan="2" Name="sideMenuDrawer" MaskCanClose="True">
-            <Border Background="{DynamicResource RegionBrush}" BorderThickness="0">
-                <Grid>
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="*"/>
-                        <RowDefinition/>
-                    </Grid.RowDefinitions>
-                    <TextBlock Padding="29, 10" Grid.Row="0" Text="Vault" Background="{DynamicResource DarkPrimaryBrush}" HorizontalAlignment="Center" FontSize="36" FontStyle="Italic" FontStretch="ExtraExpanded" FontWeight="Bold" FontFamily="Seoige UI" TextOptions.TextFormattingMode="Display"/>
-                    <hc:SideMenu AutoSelect="True" Grid.Row="1" BorderThickness="0" Width="150" VerticalAlignment="Stretch" x:Name="sideMenu" SelectionChanged="sideMenu_SelectionChanged">
-                        <hc:SideMenuItem Header="Home" x:Name="homeMenu" IsSelected="True">
-                            <hc:SideMenuItem.Icon>
-                                <fa:FontAwesomeIcon SolidIcon="Home" FontSize="15" Foreground="{DynamicResource DarkPrimaryBrush}"/>
-                            </hc:SideMenuItem.Icon>
-                        </hc:SideMenuItem>
-                        <hc:SideMenuItem Header="Beats">
-                            <hc:SideMenuItem.Icon>
-                                <fa:FontAwesomeIcon SolidIcon="Music" FontSize="15" Foreground="{DynamicResource DarkPrimaryBrush}"/>
-                            </hc:SideMenuItem.Icon>
-                            <hc:SideMenuItem Header="Library" x:Name="beatLibraryMenu">
-                                <hc:SideMenuItem.Icon>
-                                    <fa:FontAwesomeIcon SolidIcon="Folder" FontSize="15" Foreground="{DynamicResource DarkPrimaryBrush}"/>
-                                </hc:SideMenuItem.Icon>
-                            </hc:SideMenuItem>
-                            <hc:SideMenuItem Header="Packs" x:Name="beatPacksMenu">
-                                <hc:SideMenuItem.Icon>
-                                    <fa:FontAwesomeIcon SolidIcon="Compress" FontSize="15" Foreground="{DynamicResource DarkPrimaryBrush}"/>
-                                </hc:SideMenuItem.Icon>
-                            </hc:SideMenuItem>
-                        </hc:SideMenuItem>
-                        <hc:SideMenuItem Header="Samples">
-                            <hc:SideMenuItem.Icon>
-                                <fa:FontAwesomeIcon SolidIcon="Guitar" FontSize="15" Foreground="{DynamicResource DarkPrimaryBrush}"/>
-                            </hc:SideMenuItem.Icon>
-                            <hc:SideMenuItem Header="Library" x:Name="sampleLibraryMenu">
-                                <hc:SideMenuItem.Icon>
-                                    <fa:FontAwesomeIcon SolidIcon="Folder" FontSize="15" Foreground="{DynamicResource DarkPrimaryBrush}"/>
-                                </hc:SideMenuItem.Icon>
-                            </hc:SideMenuItem>
-                            <hc:SideMenuItem Header="Sample Finder" x:Name="sampleFinderMenu">
-                                <hc:SideMenuItem.Icon>
-                                    <fa:FontAwesomeIcon SolidIcon="Search" FontSize="15" Foreground="{DynamicResource DarkPrimaryBrush}"/>
-                                </hc:SideMenuItem.Icon>
-                            </hc:SideMenuItem>
-                        </hc:SideMenuItem>
-                        <hc:SideMenuItem Header="Albums" x:Name="albumMenu" >
-                            <hc:SideMenuItem.Icon>
-                                <fa:FontAwesomeIcon SolidIcon="Music" FontSize="15" Foreground="{DynamicResource DarkPrimaryBrush}"/>
-                            </hc:SideMenuItem.Icon>
-                        </hc:SideMenuItem>
-                        <hc:SideMenuItem Header="Settings" x:Name="settingsMenu">
-                            <hc:SideMenuItem.Icon>
-                                <fa:FontAwesomeIcon SolidIcon="Cog" FontSize="15" Foreground="{DynamicResource DarkPrimaryBrush}"/>
-                            </hc:SideMenuItem.Icon>
-                        </hc:SideMenuItem>
-                    </hc:SideMenu>
 
-                </Grid>
-            </Border>
-        </hc:Drawer>
-        <hc:Drawer Dock="Bottom" Grid.Column="1" Grid.RowSpan="2" Name="audioPlayerDrawer" MaskCanClose="True">
-            <Border Margin="10" Background="{DynamicResource RegionBrush}" BorderThickness="0" CornerRadius="5">
-                <Border.Effect>
-                    <DropShadowEffect Direction="270" BlurRadius="10" Opacity=".5"/>
-                </Border.Effect>
-                <Grid>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="Auto"/>
-                        <ColumnDefinition Width="Auto"/>
-                        <ColumnDefinition Width="*"/>
-                    </Grid.ColumnDefinitions>
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="*"/>
-                    </Grid.RowDefinitions>
-
-
-                    <hc:Carousel IsCenter="True" AutoRun="True" Grid.Column="0" Grid.RowSpan="3" Margin="10" Width="115" Height="115" x:Name="nowPlayingArtwork" Visibility="Collapsed"/>
-                    <hc:RunningBlock Grid.Column="1" Grid.Row="0" Grid.ColumnSpan="2" x:Name="nowPlayingTitle" FontSize="18" HorizontalAlignment="Stretch"  BorderThickness="0" Background="{x:Null}"/>
-                    <Slider Grid.Column="1" Grid.ColumnSpan="2" Grid.Row="1" x:Name="nowPlayingSlider" VerticalAlignment="Center" Orientation="Horizontal" ValueChanged="nowPlayingSlider_ValueChanged"/>
-
-                    <hc:UniformSpacingPanel Grid.Column="1" Grid.Row="2" Margin="10" HorizontalAlignment="Left" VerticalAlignment="Center" >
-                        <ToggleButton BorderBrush="{x:Null}" x:Name="shuffleToggle" Content="🔀" FontSize="25" Foreground="{DynamicResource DarkPrimaryBrush}" Padding="0,-4,0,0"/>
-                        <ToggleButton BorderBrush="{x:Null}" x:Name="repeatToggle" Content="🔁" FontSize="25" Foreground="{DynamicResource DarkPrimaryBrush}" Padding="0,-4,0,0"/>
-                    </hc:UniformSpacingPanel>
-
-                    <hc:ButtonGroup Grid.Column="1" Grid.ColumnSpan="2" Grid.Row="2" Margin="10" MaxWidth="500" HorizontalAlignment="Center" VerticalAlignment="Center">
-                        <Button BorderBrush="{x:Null}" Click="nowPlayingFastBackwards_Click" Height="50" >
-                            <fa:FontAwesomeIcon SolidIcon="FastBackward" FontSize="35" Foreground="{DynamicResource DarkPrimaryBrush}"/>
-                        </Button>
-                        <Button BorderBrush="{x:Null}" Click="nowPlayingBackwards_Click"  Height="50">
-                            <fa:FontAwesomeIcon SolidIcon="Backward" FontSize="35" Foreground="{DynamicResource DarkPrimaryBrush}"/>
-                        </Button>
-                        <Button BorderBrush="{x:Null}" Click="playBtn_Click"  Height="50">
-                            <fa:FontAwesomeIcon SolidIcon="PlayCircle" FontSize="35" Foreground="{DynamicResource DarkPrimaryBrush}" x:Name="nowPlayingPlayBtn"/>
-                        </Button>
-                        <Button BorderBrush="{x:Null}" Click="nowPlayingForwards_Click"  Height="50">
-                            <fa:FontAwesomeIcon SolidIcon="Forward" FontSize="35" Foreground="{DynamicResource DarkPrimaryBrush}"/>
-                        </Button>
-                        <Button BorderBrush="{x:Null}" Click="nowPlayingFastForwards_Click"  Height="50">
-                            <fa:FontAwesomeIcon SolidIcon="FastForward" FontSize="35" Foreground="{DynamicResource DarkPrimaryBrush}"/>
-                        </Button>
-                    </hc:ButtonGroup>
-
-                    <hc:UniformSpacingPanel Spacing="1" Orientation="Horizontal" Grid.Column="2" Grid.Row="2" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="10">
-                        <fa:FontAwesomeIcon SolidIcon="VolumeDown" FontSize="15" Foreground="{DynamicResource DarkPrimaryBrush}"/>
-                        <Slider Value="50" ValueChanged="nowPlayingVolume_ValueChanged" Width="100" HorizontalAlignment="Right" x:Name="nowPlayingVolume" Minimum="0" Maximum="100" Orientation="Horizontal"/>
-                        <fa:FontAwesomeIcon SolidIcon="VolumeUp" FontSize="15" Foreground="{DynamicResource DarkPrimaryBrush}"/>
-                    </hc:UniformSpacingPanel>
-                </Grid>
-            </Border>
-        </hc:Drawer>
-        <hc:Drawer Grid.Column="1" Grid.RowSpan="2" Name="audioEditDrawer" MaskCanClose="True">
-            <Border Background="{DynamicResource RegionBrush}" Width="300" BorderThickness="0">
-                <Grid>
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition/>
-                    </Grid.RowDefinitions>
-                    <TextBlock Margin="10,0,0,0" Text="Edit" Style="{StaticResource TextBlockTitle}" HorizontalAlignment="Left" x:Name="editBeatHeader"/>
-                    <Button Command="hc:ControlCommands.Close" Grid.Row="0" HorizontalAlignment="Right" Foreground="{DynamicResource PrimaryTextBrush}" Style="{StaticResource ButtonIcon}" hc:IconElement.Geometry="{StaticResource DeleteFillCircleGeometry}"/>
-
-                    <ScrollViewer Grid.Row="1" VerticalAlignment="Stretch" >
-                        <hc:UniformSpacingPanel Orientation="Vertical" Spacing="5">
-                            <hc:PropertyGrid x:Name="editProperties" Margin="10,0" Padding="0"/>
-                            <Image x:Name="editBeatImage" Width="100" Height="100" Margin="0"/>
-                            <Button Content="Select Artwork" x:Name="editBeatBrowseImage" Click="audioEditBrowseImage_Click" Margin="10, 0"/>
-                            <Button x:Name="saveBeatBtn" Content="Save" Click="saveAudioBtn_Click" Style="{StaticResource ButtonPrimary}"  Margin="10, 0"/>
-                        </hc:UniformSpacingPanel>
-                    </ScrollViewer>
-
-                </Grid>
-            </Border>
-        </hc:Drawer>
-        
         <!-- Pages-->
-        <Grid Grid.Column="1" Grid.Row="0" x:Name="welcomeGrid" Visibility="Collapsed">
+        <Grid Grid.Column="1" Grid.Row="0" x:Name="welcomeGrid" Visibility="Visible">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="Auto"/>
                 <ColumnDefinition Width="*"/>
@@ -191,7 +52,7 @@
             </Grid.RowDefinitions>
             <Label Content="Welcome to Vault!" Grid.ColumnSpan="2" FontSize="25" Foreground="{DynamicResource DarkPrimaryBrush}" BorderThickness="0" Background="{x:Null}"/>
             <hc:UniformSpacingPanel Grid.Row="1" Grid.ColumnSpan="2" Orientation="Vertical" Margin="5" Spacing="5">
-                <Label BorderThickness="0" Background="{x:Null}" Content="You are running a pre-alpha version (v0.2.1)"/>
+                <Label BorderThickness="0" Background="{x:Null}" Content="You are running a pre-alpha version."/>
                 <Label BorderThickness="0" Background="{x:Null}" Content="This means many features are not fully implemented, and you will probably experience bugs!"/>
                 <Label BorderThickness="0" Background="{x:Null}" Content="Please send any and all feedback/bugs to eblank1221@gmail.com"/>
             </hc:UniformSpacingPanel>
@@ -216,10 +77,6 @@
                     </DataTemplate>
                 </DataGrid.RowHeaderTemplate>
                 <DataGrid.Columns>
-                    <DataGridTextColumn IsReadOnly="True" Width="200" CanUserResize="False" Binding="{Binding Title}" Header="Title"/>
-                    <DataGridTextColumn IsReadOnly="True" Width="60" CanUserResize="False" Binding="{Binding BPM}" Header="BPM"/>
-                    <DataGridTextColumn IsReadOnly="True" Width="70" CanUserResize="False" Binding="{Binding Duration}" Header="Duration" />
-                    <DataGridTextColumn IsReadOnly="True" Width="100" CanUserResize="False" Binding="{Binding Bitrate}" Header="Birtate" />
                     <DataGridTemplateColumn>
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
@@ -240,6 +97,12 @@
                             </DataTemplate>
                         </DataGridTemplateColumn.CellTemplate>
                     </DataGridTemplateColumn>
+                    <DataGridTextColumn IsReadOnly="True" MaxWidth="300" CanUserResize="False" Binding="{Binding Title}" Header="Title"/>
+                    <DataGridTextColumn IsReadOnly="True" CanUserResize="False" Binding="{Binding BPM}" Header="BPM"/>
+                    <DataGridTextColumn IsReadOnly="True" CanUserResize="False" Binding="{Binding Duration}" Header="Duration" />
+                    <DataGridTextColumn IsReadOnly="True" CanUserResize="False" Binding="{Binding Created}" Header="Created"/>
+                    <DataGridTextColumn IsReadOnly="True" CanUserResize="False" Binding="{Binding Modified}" Header="Last Modified" />
+                    <DataGridTextColumn IsReadOnly="True"  CanUserResize="False" Binding="{Binding Bitrate}" Header="Birtate" />
                 </DataGrid.Columns>
             </DataGrid>
         </Grid>
@@ -264,42 +127,52 @@
                             <RowDefinition Height="Auto"/>
                             <RowDefinition Height="*"/>
                         </Grid.RowDefinitions>
-                        <hc:UniformSpacingPanel Margin="5" Orientation="Vertical" Spacing="5" Grid.Column="0" Grid.Row="0" Grid.RowSpan="2">
-                            <Label Content="Included Beats"/>
-                            <ListView Margin="5,0,5,5" Height="400" x:Name="beatPackBeatsList" BorderThickness="0"  Grid.Column="0" Grid.Row="1" Grid.RowSpan="2" Width="400" ItemsSource="{Binding BeatPackBeatDatas, UpdateSourceTrigger=Default, RelativeSource={RelativeSource AncestorType=Window}}" VerticalAlignment="Top">
-                                <ListView.View>
-                                    <GridView >
-                                        <GridViewColumn Header="Title" Width="215" DisplayMemberBinding="{Binding Title}"/>
-                                        <GridViewColumn Header="BPM" Width="50" DisplayMemberBinding="{Binding BPM}"/>
-                                    </GridView>
-                                </ListView.View>
-                            </ListView>
-                            <Button Content="Remove" Click="removeBeatPackBeat_Click"/>
 
-                            <Button BorderThickness="0" Click="playBtn_Click">
-                                <fa:FontAwesomeIcon SolidIcon="Play" FontSize="15" Foreground="{DynamicResource DarkPrimaryBrush}"/>
-                            </Button>
-                        </hc:UniformSpacingPanel>
-                        <hc:UniformSpacingPanel Margin="5" Orientation="Vertical" Spacing="5" Grid.Column="1" Grid.Row="0">
-                            <Label Content="Beat Pack Details"/>
-                            
-                            <TextBox x:Name="beatPackTitle" Style="{StaticResource TextBoxExtend}" hc:InfoElement.TitlePlacement="Left" hc:InfoElement.Title="Title"/>
-                            <hc:NumericUpDown x:Name="beatPackCost" Style="{StaticResource NumericUpDownExtend}" hc:InfoElement.TitlePlacement="Left" hc:InfoElement.Title="Price ($)"/>
-                            
-                            <Label Content="Recipients (select)" BorderThickness="0"/>
-                            <ListBox x:Name="beatPackRecipientsList" Height="150"/>
-                            <hc:UniformSpacingPanel Orientation="Horizontal" Spacing="5">
-                                <TextBox Width="150" x:Name="emailRecipientTextBox"/>
-                                <Button Content="Add Email" Click="addEmailRecipient_Click"/>
-                                <Button Content="Add From File" Click="addRecipientsFromFile_Click" IsEnabled="False"/>
-                                <Button Content="Remove Selected" Click="removeBeatPackRecipient_Click"/>
+                        <Border Grid.Column="0" Grid.Row="0" Grid.RowSpan="2" Margin="5" BorderThickness="0" CornerRadius="5" Background="{DynamicResource BorderBrush}"  BorderBrush="{DynamicResource BorderBrush}">
+                            <hc:UniformSpacingPanel Margin="5" Orientation="Vertical" Spacing="5" >
+                                <Label Content="Included Beats"/>
+                                <ListView MaxHeight="400" x:Name="beatPackBeatsList"   Background="{x:Null}" Grid.Column="0" Grid.Row="1" Grid.RowSpan="2" Width="400" ItemsSource="{Binding BeatPackBeatDatas, UpdateSourceTrigger=Default, RelativeSource={RelativeSource AncestorType=Window}}">
+                                    <ListView.View>
+                                        <GridView >
+                                            <GridViewColumn Header="Title" Width="215" DisplayMemberBinding="{Binding Title}"/>
+                                            <GridViewColumn Header="BPM" Width="50" DisplayMemberBinding="{Binding BPM}"/>
+                                        </GridView>
+                                    </ListView.View>
+                                </ListView>
+                                <hc:ButtonGroup>
+                                    <Button Click="removeBeatPackBeat_Click">
+                                        <fa:FontAwesomeIcon SolidIcon="Trash" Foreground="{DynamicResource DarkPrimaryBrush}"/>
+                                    </Button>
+
+                                    <Button Click="playBtn_Click">
+                                        <fa:FontAwesomeIcon SolidIcon="Play" Foreground="{DynamicResource DarkPrimaryBrush}"/>
+                                    </Button>
+                                </hc:ButtonGroup>
                             </hc:UniformSpacingPanel>
-                            <hc:ButtonGroup Margin="50">
-                                <Button Content="Save" Click="saveBeatPack_Click"/>
-                                <Button Content="Save To .zip" Click="saveBeatPackZip_Click" IsEnabled="False"/>
-                                <Button Content="Send To Recipients" Click="sendBeatPack_Click" IsEnabled="False"/>
-                            </hc:ButtonGroup>
-                        </hc:UniformSpacingPanel>
+                        </Border>
+                        <Border Grid.Column="1" Grid.Row="0" Margin="5" BorderThickness="0" CornerRadius="5" Background="{DynamicResource BorderBrush}"  BorderBrush="{DynamicResource BorderBrush}">
+
+                            <hc:UniformSpacingPanel Margin="5" Orientation="Vertical" Spacing="5" >
+                                <Label Content="Beat Pack Details"/>
+
+                                <TextBox x:Name="beatPackTitle" Style="{StaticResource TextBoxExtend}" hc:InfoElement.TitlePlacement="Left" hc:InfoElement.Title="Title"/>
+                                <hc:NumericUpDown x:Name="beatPackCost" Style="{StaticResource NumericUpDownExtend}" hc:InfoElement.TitlePlacement="Left" hc:InfoElement.Title="Price ($)"/>
+
+                                <Label Content="Recipients (select)" BorderThickness="0"/>
+                                <ListBox x:Name="beatPackRecipientsList" Height="150"/>
+                                <hc:UniformSpacingPanel Orientation="Horizontal" Spacing="5">
+                                    <TextBox Width="150" x:Name="emailRecipientTextBox"/>
+                                    <Button Content="Add Email" Click="addEmailRecipient_Click"/>
+                                    <Button Content="Add From File" Click="addRecipientsFromFile_Click" IsEnabled="False"/>
+                                    <Button Content="Remove Selected" Click="removeBeatPackRecipient_Click"/>
+                                </hc:UniformSpacingPanel>
+                                <hc:ButtonGroup Margin="50">
+                                    <Button Content="Save" Click="saveBeatPack_Click"/>
+                                    <Button Content="Save To .zip" Click="saveBeatPackZip_Click" IsEnabled="False"/>
+                                    <Button Content="Send To Recipients" Click="sendBeatPack_Click" IsEnabled="False"/>
+                                </hc:ButtonGroup>
+                            </hc:UniformSpacingPanel>
+                        </Border>
                     </Grid>
                 </TabItem>
                 <TabItem Header="My Beat Packs" x:Name="myBeatPacksTab">
@@ -395,37 +268,45 @@
             </Grid.RowDefinitions>
             <Label Grid.ColumnSpan="2" HorizontalAlignment="Center" Content="Sample Finder" FontSize="25" Foreground="{DynamicResource DarkPrimaryBrush}" BorderThickness="0" Background="{x:Null}"/>
             <hc:LoadingCircle x:Name="loadingVideo" Visibility="Collapsed" Grid.Column="2" Width="25" Height="25" HorizontalAlignment="Right" Margin="10"/>
-            
-            <hc:UniformSpacingPanel Orientation="Horizontal" Spacing="5" Grid.Row="1" Margin="5">
-                <Button Content="Find Samples"  Click="getRandomSamples"/>
-                <TextBox Text="" KeyDown="tagSearchbox_KeyDown" x:Name="tagSearchbox" Style="{StaticResource TextBoxExtend}" hc:InfoElement.TitlePlacement="Left" hc:InfoElement.Title="Enter Tags:" Width="150" Height="30"/>
-            </hc:UniformSpacingPanel>
-            <hc:TagContainer x:Name="tagPanel" Grid.Row="1" Grid.Column="1" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" BorderBrush="{x:Null}" Padding="5">
-                <hc:Tag Content="-Beat"/>
-                <hc:Tag Content="-Mix"/>
-                <hc:Tag Content="-Playlist"/>
-                <hc:Tag Content="-Pack"/>
-                <hc:Tag Content="-Mixtape"/>
-            </hc:TagContainer>
 
-            <hc:UniformSpacingPanel Orientation="Horizontal" Spacing="5" Grid.Row="2" Grid.ColumnSpan="2" Margin="5">
-                <Button Content="Previous" Click="previousRandomSample_Click" Width="75"/>
-                <Label x:Name="sampleNumber" BorderThickness="0" Background="{x:Null}" />
-                <Button Content="Next" Click="nextRandomSample_Click" Width="75"/>
-                <Button Content="🔀" Click="randomSample_Click"/>
-                <Button Content="Clear" Click="clearRandomSamples_Click"/>
-            </hc:UniformSpacingPanel>
-            <hc:UniformSpacingPanel Orientation="Horizontal" Spacing="5" Grid.Row="3" Grid.ColumnSpan="2" Margin="5">
-                <ComboBox x:Name="ytSampleSelector" Width="400" SelectionChanged="ComboBox_SelectionChanged" DisplayMemberPath="Title" ItemsSource="{Binding YoutubeVideoDatas, UpdateSourceTrigger=Default, RelativeSource={RelativeSource AncestorType=Window}}"/>
-                <hc:Rate Value="0" x:Name="ytsampleRate" ValueChanged="ytsampleRate_ValueChanged"/>
-                <Button  Click="removeSelectedYtSample_Click">
-                    <fa:FontAwesomeIcon SolidIcon="Trash" FontSize="15" Foreground="{DynamicResource DarkPrimaryBrush}"/>
-                </Button>
-                <Button Click="downloadSelectedYtSample_Click">
-                    <fa:FontAwesomeIcon SolidIcon="Download" FontSize="15" Foreground="{DynamicResource DarkPrimaryBrush}"/>
-                </Button>
-            </hc:UniformSpacingPanel>
-            <wv2:WebView2 Margin="5" Grid.Row="4" Grid.ColumnSpan="2" x:Name="ytBrowser" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"/>
+            <Border Grid.Row="1" Grid.RowSpan="4" Margin="5" BorderThickness="0" CornerRadius="5" Background="{DynamicResource BorderBrush}"  BorderBrush="{DynamicResource BorderBrush}">
+                <hc:UniformSpacingPanel Orientation="Vertical">
+                    <TextBox Margin="5" Text="" KeyDown="tagSearchbox_KeyDown" x:Name="tagSearchbox" Style="{StaticResource TextBoxExtend}" hc:InfoElement.TitlePlacement="Left" hc:InfoElement.Title="Custom Tags:" HorizontalAlignment="Stretch"/>
+                    <hc:TagContainer x:Name="tagPanel" Grid.Column="0" MaxWidth="250" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" BorderBrush="{x:Null}">
+                        <hc:Tag Content="-Beat" Margin="2"/>
+                        <hc:Tag Content="-Mix" Margin="2"/>
+                        <hc:Tag Content="-Playlist" Margin="2"/>
+                        <hc:Tag Content="-Pack" Margin="2"/>
+                        <hc:Tag Content="-Mixtape" Margin="2"/>
+                    </hc:TagContainer>
+                    <Button Margin="5" Content="Find Samples" HorizontalAlignment="Stretch"  Click="getRandomSamples" Grid.Row="1" Style="{DynamicResource ButtonPrimary}"/>
+                </hc:UniformSpacingPanel>
+            </Border>
+            <Border Grid.Column="1" Grid.ColumnSpan="2" Grid.Row="1" Margin="5" BorderThickness="0" CornerRadius="5" Background="{DynamicResource BorderBrush}"  BorderBrush="{DynamicResource BorderBrush}">
+                <hc:UniformSpacingPanel Orientation="Vertical">
+                    <hc:UniformSpacingPanel Orientation="Horizontal" Spacing="5" Grid.Row="2" Grid.Column="1" Margin="5">
+                        <ComboBox x:Name="ytSampleSelector" SelectionChanged="ComboBox_SelectionChanged" DisplayMemberPath="Title" ItemsSource="{Binding YoutubeVideoDatas, UpdateSourceTrigger=Default, RelativeSource={RelativeSource AncestorType=Window}}" Width="470"/>
+                        <Button  Click="removeSelectedYtSample_Click">
+                            <fa:FontAwesomeIcon SolidIcon="Trash" FontSize="15" Foreground="{DynamicResource DarkPrimaryBrush}"/>
+                        </Button>
+                        <Button Click="downloadSelectedYtSample_Click">
+                            <fa:FontAwesomeIcon SolidIcon="Download" FontSize="15" Foreground="{DynamicResource DarkPrimaryBrush}"/>
+                        </Button>
+                        <hc:Rate Value="0" x:Name="ytsampleRate" ValueChanged="ytsampleRate_ValueChanged" AllowHalf="True" ShowText="True" Foreground="{DynamicResource DarkPrimaryBrush}"/>
+                    </hc:UniformSpacingPanel>
+                    <hc:UniformSpacingPanel Orientation="Horizontal" Spacing="5" Margin="5">
+                        <Button Content="Previous" Click="previousRandomSample_Click" Width="75" Style="{DynamicResource ButtonPrimary}"/>
+                        <Label x:Name="sampleNumber" BorderThickness="0" Background="{x:Null}" Padding="0"/>
+                        <Button Content="Next" Click="nextRandomSample_Click" Width="75" Style="{DynamicResource ButtonPrimary}"/>
+                        <Button Content="🔀" Click="randomSample_Click" Style="{DynamicResource ButtonPrimary}"/>
+                        <Button Content="Clear" Click="clearRandomSamples_Click" Style="{DynamicResource ButtonPrimary}"/>
+                    </hc:UniformSpacingPanel>
+                </hc:UniformSpacingPanel>
+            </Border>
+            <Border Grid.Row="4" Grid.Column="1" Margin="5" BorderThickness="0" CornerRadius="5" Background="{DynamicResource BorderBrush}"  BorderBrush="{DynamicResource BorderBrush}">
+
+                <wv2:WebView2 Margin="5"  x:Name="ytBrowser" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" />
+            </Border>
         </Grid>
         <Grid Grid.Column="1" Grid.Row="0" x:Name="albumGrid" Visibility="Collapsed">
             <Grid.ColumnDefinitions>
@@ -438,8 +319,67 @@
             </Grid.RowDefinitions>
             <Label Content="Albums" Grid.ColumnSpan="2" HorizontalAlignment="Center" FontSize="25" Foreground="{DynamicResource DarkPrimaryBrush}" BorderThickness="0" Background="{x:Null}"/>
 
-            <hc:CoverView Grid.Row="1" Grid.ColumnSpan="2" x:Name="albumsView"/>
 
+
+            <Border Grid.Row="1" Grid.ColumnSpan="2" Margin="5" BorderThickness="0" CornerRadius="5" Background="{DynamicResource BorderBrush}"  BorderBrush="{DynamicResource BorderBrush}">
+                <hc:CoverView  x:Name="albumsView" VerticalAlignment="Stretch" >
+                    <hc:CoverViewItem x:Name="albumViewItem">
+                        <Grid x:Name="albumViewItemPanel">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
+                            <Label x:Name="albumViewItemHeader" Grid.Column="0" Grid.Row="0" BorderThickness="0" Foreground="{DynamicResource DarkPrimaryBrush}" Padding="5,0,0,0" FontSize="16" FontWeight="Bold"/>
+
+                            <DataGrid Grid.Column="0" Grid.Row="1" Background="{x:Null}" Grid.ColumnSpan="2" x:Name="albumViewItemList" HeadersVisibility="None" hc:DataGridAttach.ShowRowNumber="True" RowHeaderWidth="60" ColumnHeaderHeight="30" AutoGenerateColumns="False" ItemsSource="{Binding BeatDatas, UpdateSourceTrigger=Default, RelativeSource={RelativeSource AncestorType=Window}}" HorizontalScrollBarVisibility="Hidden" SelectionMode="Single">
+                                <DataGrid.RowHeaderTemplate>
+                                    <DataTemplate>
+                                        <CheckBox IsChecked="{Binding IsSelected,RelativeSource={RelativeSource AncestorType=DataGridRow}}"/>
+                                    </DataTemplate>
+                                </DataGrid.RowHeaderTemplate>
+                                <DataGrid.Columns>
+                                    <DataGridTemplateColumn>
+                                        <DataGridTemplateColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <hc:UniformSpacingPanel Orientation="Horizontal" Spacing="3">
+                                                    <Button BorderThickness="0" Click="playBtn_Click">
+                                                        <fa:FontAwesomeIcon SolidIcon="Play" FontSize="15" Foreground="{DynamicResource DarkPrimaryBrush}"/>
+                                                    </Button>
+                                                </hc:UniformSpacingPanel>
+                                            </DataTemplate>
+                                        </DataGridTemplateColumn.CellTemplate>
+                                    </DataGridTemplateColumn>
+                                    <DataGridTextColumn IsReadOnly="True" Width="200" CanUserResize="False" Binding="{Binding Title}" Header="Title"/>
+                                    <DataGridTextColumn IsReadOnly="True" Width="60" CanUserResize="False" Binding="{Binding BPM}" Header="BPM"/>
+                                    <DataGridTextColumn IsReadOnly="True" Width="70" CanUserResize="False" Binding="{Binding Duration}" Header="Duration" />
+                                    <DataGridTextColumn IsReadOnly="True" Width="100" CanUserResize="False" Binding="{Binding Bitrate}" Header="Birtate" />
+
+                                    <DataGridTemplateColumn>
+                                        <DataGridTemplateColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <hc:UniformSpacingPanel Orientation="Horizontal" Spacing="3">
+                                                    <Button BorderThickness="0" Click="audioEditBtn_Click">
+                                                        <fa:FontAwesomeIcon SolidIcon="Edit" FontSize="15" Foreground="{DynamicResource DarkPrimaryBrush}"/>
+                                                    </Button>
+                                                    <Button BorderThickness="0" Click="openFileFolderBtn_Click">
+                                                        <fa:FontAwesomeIcon SolidIcon="FolderOpen" FontSize="15" Foreground="{DynamicResource DarkPrimaryBrush}"/>
+                                                    </Button>
+                                                </hc:UniformSpacingPanel>
+                                            </DataTemplate>
+                                        </DataGridTemplateColumn.CellTemplate>
+                                    </DataGridTemplateColumn>
+                                </DataGrid.Columns>
+                            </DataGrid>
+                            <Image x:Name="albumViewImage" Grid.Column="2" Grid.Row="0" Grid.RowSpan="2"/>
+                        </Grid>
+                    </hc:CoverViewItem>
+                </hc:CoverView>
+            </Border>
         </Grid>
         <Grid Grid.Column="1" Grid.Row="0" x:Name="settingsGrid" Visibility="Collapsed">
             <Grid.ColumnDefinitions>
@@ -551,7 +491,148 @@
                 </StackPanel>
             </hc:UniformSpacingPanel>
         </Grid>
-        
+
+        <!-- Drawers -->
+        <hc:Drawer Dock="Left" Grid.Column="1" Grid.RowSpan="2" Name="sideMenuDrawer" MaskCanClose="True" ShowMode="Press">
+            <Border Background="{DynamicResource RegionBrush}" BorderThickness="0">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+                    <TextBlock Padding="29, 10" Grid.Row="0" Text="Vault" Background="{DynamicResource DarkPrimaryBrush}" HorizontalAlignment="Center" FontSize="36" FontStyle="Italic" FontStretch="ExtraExpanded" FontWeight="Bold" FontFamily="Seoige UI" TextOptions.TextFormattingMode="Display"/>
+                    <hc:SideMenu AutoSelect="True" Grid.Row="1" BorderThickness="0" Width="150" VerticalAlignment="Stretch" x:Name="sideMenu" SelectionChanged="sideMenu_SelectionChanged">
+                        <hc:SideMenuItem Header="Home" x:Name="homeMenu" IsSelected="True">
+                            <hc:SideMenuItem.Icon>
+                                <fa:FontAwesomeIcon SolidIcon="Home" FontSize="15" Foreground="{DynamicResource DarkPrimaryBrush}"/>
+                            </hc:SideMenuItem.Icon>
+                        </hc:SideMenuItem>
+                        <hc:SideMenuItem Header="Beats">
+                            <hc:SideMenuItem.Icon>
+                                <fa:FontAwesomeIcon SolidIcon="Music" FontSize="15" Foreground="{DynamicResource DarkPrimaryBrush}"/>
+                            </hc:SideMenuItem.Icon>
+                            <hc:SideMenuItem Header="Library" x:Name="beatLibraryMenu">
+                                <hc:SideMenuItem.Icon>
+                                    <fa:FontAwesomeIcon SolidIcon="Folder" FontSize="15" Foreground="{DynamicResource DarkPrimaryBrush}"/>
+                                </hc:SideMenuItem.Icon>
+                            </hc:SideMenuItem>
+                            <hc:SideMenuItem Header="Packs" x:Name="beatPacksMenu">
+                                <hc:SideMenuItem.Icon>
+                                    <fa:FontAwesomeIcon SolidIcon="Compress" FontSize="15" Foreground="{DynamicResource DarkPrimaryBrush}"/>
+                                </hc:SideMenuItem.Icon>
+                            </hc:SideMenuItem>
+                        </hc:SideMenuItem>
+                        <hc:SideMenuItem Header="Samples">
+                            <hc:SideMenuItem.Icon>
+                                <fa:FontAwesomeIcon SolidIcon="Guitar" FontSize="15" Foreground="{DynamicResource DarkPrimaryBrush}"/>
+                            </hc:SideMenuItem.Icon>
+                            <hc:SideMenuItem Header="Library" x:Name="sampleLibraryMenu">
+                                <hc:SideMenuItem.Icon>
+                                    <fa:FontAwesomeIcon SolidIcon="Folder" FontSize="15" Foreground="{DynamicResource DarkPrimaryBrush}"/>
+                                </hc:SideMenuItem.Icon>
+                            </hc:SideMenuItem>
+                            <hc:SideMenuItem Header="Sample Finder" x:Name="sampleFinderMenu">
+                                <hc:SideMenuItem.Icon>
+                                    <fa:FontAwesomeIcon SolidIcon="Search" FontSize="15" Foreground="{DynamicResource DarkPrimaryBrush}"/>
+                                </hc:SideMenuItem.Icon>
+                            </hc:SideMenuItem>
+                        </hc:SideMenuItem>
+                        <hc:SideMenuItem Header="Albums" x:Name="albumMenu" >
+                            <hc:SideMenuItem.Icon>
+                                <fa:FontAwesomeIcon SolidIcon="Music" FontSize="15" Foreground="{DynamicResource DarkPrimaryBrush}"/>
+                            </hc:SideMenuItem.Icon>
+                        </hc:SideMenuItem>
+                        <hc:SideMenuItem Header="Settings" x:Name="settingsMenu">
+                            <hc:SideMenuItem.Icon>
+                                <fa:FontAwesomeIcon SolidIcon="Cog" FontSize="15" Foreground="{DynamicResource DarkPrimaryBrush}"/>
+                            </hc:SideMenuItem.Icon>
+                        </hc:SideMenuItem>
+                    </hc:SideMenu>
+
+                    <StackPanel Grid.Row="3" VerticalAlignment="Bottom" Margin="5">
+                        <TextBlock Text="Created By Ethan Blank" Foreground="{DynamicResource DarkPrimaryBrush}"/>
+                        <TextBlock Text="Version 0.2.1" Foreground="{DynamicResource DarkPrimaryBrush}" x:Name="versionLabel"/>
+                    </StackPanel>
+                </Grid>
+            </Border>
+        </hc:Drawer>
+        <hc:Drawer Dock="Bottom" Grid.Column="1" Grid.RowSpan="2" Name="audioPlayerDrawer" MaskCanClose="True">
+            <Border Margin="10" Background="{DynamicResource RegionBrush}" BorderThickness="0" CornerRadius="5">
+                <Border.Effect>
+                    <DropShadowEffect Direction="270" BlurRadius="10" Opacity=".5"/>
+                </Border.Effect>
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+
+
+                    <hc:Carousel IsCenter="True" AutoRun="True" Grid.Column="0" Grid.RowSpan="3" Margin="10" Width="115" Height="115" x:Name="nowPlayingArtwork" Visibility="Collapsed"/>
+                    <hc:RunningBlock Grid.Column="1" Grid.Row="0" Grid.ColumnSpan="2" x:Name="nowPlayingTitle" FontSize="18" HorizontalAlignment="Stretch"  BorderThickness="0" Background="{x:Null}"/>
+                    <Slider Grid.Column="1" Grid.ColumnSpan="2" Grid.Row="1" x:Name="nowPlayingSlider" VerticalAlignment="Center" Orientation="Horizontal" ValueChanged="nowPlayingSlider_ValueChanged"/>
+
+                    <hc:UniformSpacingPanel Grid.Column="1" Grid.Row="2" Margin="10" HorizontalAlignment="Left" VerticalAlignment="Center" >
+                        <ToggleButton BorderBrush="{x:Null}" x:Name="shuffleToggle" Content="🔀" FontSize="25" Foreground="{DynamicResource DarkPrimaryBrush}" Padding="0,-4,0,0"/>
+                        <ToggleButton BorderBrush="{x:Null}" x:Name="repeatToggle" Content="🔁" FontSize="25" Foreground="{DynamicResource DarkPrimaryBrush}" Padding="0,-4,0,0"/>
+                    </hc:UniformSpacingPanel>
+
+                    <hc:ButtonGroup Grid.Column="1" Grid.ColumnSpan="2" Grid.Row="2" Margin="10" MaxWidth="500" HorizontalAlignment="Center" VerticalAlignment="Center">
+                        <Button BorderBrush="{x:Null}" Click="nowPlayingFastBackwards_Click" Height="50" >
+                            <fa:FontAwesomeIcon SolidIcon="FastBackward" FontSize="35" Foreground="{DynamicResource DarkPrimaryBrush}"/>
+                        </Button>
+                        <Button BorderBrush="{x:Null}" Click="nowPlayingBackwards_Click"  Height="50">
+                            <fa:FontAwesomeIcon SolidIcon="Backward" FontSize="35" Foreground="{DynamicResource DarkPrimaryBrush}"/>
+                        </Button>
+                        <Button BorderBrush="{x:Null}" Click="playBtn_Click"  Height="50">
+                            <fa:FontAwesomeIcon SolidIcon="PlayCircle" FontSize="35" Foreground="{DynamicResource DarkPrimaryBrush}" x:Name="nowPlayingPlayBtn"/>
+                        </Button>
+                        <Button BorderBrush="{x:Null}" Click="nowPlayingForwards_Click"  Height="50">
+                            <fa:FontAwesomeIcon SolidIcon="Forward" FontSize="35" Foreground="{DynamicResource DarkPrimaryBrush}"/>
+                        </Button>
+                        <Button BorderBrush="{x:Null}" Click="nowPlayingFastForwards_Click"  Height="50">
+                            <fa:FontAwesomeIcon SolidIcon="FastForward" FontSize="35" Foreground="{DynamicResource DarkPrimaryBrush}"/>
+                        </Button>
+                    </hc:ButtonGroup>
+
+                    <hc:UniformSpacingPanel Spacing="1" Orientation="Horizontal" Grid.Column="2" Grid.Row="2" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="10">
+                        <fa:FontAwesomeIcon SolidIcon="VolumeDown" FontSize="15" Foreground="{DynamicResource DarkPrimaryBrush}"/>
+                        <Slider Value="50" ValueChanged="nowPlayingVolume_ValueChanged" Width="100" HorizontalAlignment="Right" x:Name="nowPlayingVolume" Minimum="0" Maximum="100" Orientation="Horizontal"/>
+                        <fa:FontAwesomeIcon SolidIcon="VolumeUp" FontSize="15" Foreground="{DynamicResource DarkPrimaryBrush}"/>
+                    </hc:UniformSpacingPanel>
+                </Grid>
+            </Border>
+        </hc:Drawer>
+        <hc:Drawer Grid.Column="1" Grid.RowSpan="2" Name="audioEditDrawer" MaskCanClose="True">
+            <Border Background="{DynamicResource RegionBrush}" Width="300" BorderThickness="0">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition/>
+                    </Grid.RowDefinitions>
+                    <TextBlock Margin="10,0,0,0" Text="Edit" Style="{StaticResource TextBlockTitle}" HorizontalAlignment="Left" x:Name="editBeatHeader"/>
+                    <Button Command="hc:ControlCommands.Close" Grid.Row="0" HorizontalAlignment="Right" Foreground="{DynamicResource PrimaryTextBrush}" Style="{StaticResource ButtonIcon}" hc:IconElement.Geometry="{StaticResource DeleteFillCircleGeometry}"/>
+
+                    <ScrollViewer Grid.Row="1" VerticalAlignment="Stretch" >
+                        <hc:UniformSpacingPanel Orientation="Vertical" Spacing="5">
+                            <hc:PropertyGrid x:Name="editProperties" Margin="10,0" Padding="0"/>
+                            <Image x:Name="editBeatImage" Width="100" Height="100" Margin="0"/>
+                            <Button Content="Select Artwork" x:Name="editBeatBrowseImage" Click="audioEditBrowseImage_Click" Margin="10, 0"/>
+                            <Button x:Name="saveBeatBtn" Content="Save" Click="saveAudioBtn_Click" Style="{StaticResource ButtonPrimary}"  Margin="10, 0"/>
+                        </hc:UniformSpacingPanel>
+                    </ScrollViewer>
+
+                </Grid>
+            </Border>
+        </hc:Drawer>
+
     </Grid>
     
 </hc:Window>

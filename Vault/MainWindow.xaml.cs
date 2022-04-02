@@ -7,10 +7,12 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Deployment.Application;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
@@ -60,7 +62,7 @@ namespace Vault
         public static ObservableCollection<YoutubeVideoModel> YoutubeVideoDatas { get; set; } = new ObservableCollection<YoutubeVideoModel>();
         public MainWindow()
         {
-            // Init window & components
+            // Initialize Window & Load Settings
             var chrome = new WindowChrome
             {
                 CornerRadius = new CornerRadius(),
@@ -72,23 +74,27 @@ namespace Vault
             WindowChrome.SetWindowChrome(this, chrome);
             InitializeComponent();
             Settings.Load();
-            updateTheme();
-            LoadBeatPacks();
-            LoadVideoDatas();
 
-            outputDevice?.Dispose();
-            outputDevice = new WaveOutEvent();
-            outputDevice.PlaybackStopped += delegate
-            {
-                playAudioFile();
-            };
-            // load initial data (libraries, etc...)
+            // load data
             beatFoldersList.ItemsSource = Settings.beatFolders;
             sampleFoldersList.ItemsSource = Settings.sampleFolders;
             albumFoldersList.ItemsSource = Settings.albumFolders;
             Task.Run(async () => getBeats());
             Task.Run(async () => getSamples());
             Task.Run(async () => getAlbums());
+            LoadBeatPacks();
+            LoadVideoDatas();
+
+            // Load Style/Theme
+            updateTheme();
+
+            // Init audio out
+            outputDevice?.Dispose();
+            outputDevice = new WaveOutEvent();
+            outputDevice.PlaybackStopped += delegate
+            {
+                playAudioFile();
+            };
 
             // Start data monitors (ram, cpu, now playing...)
             PerformanceCounter cpuCounter = new PerformanceCounter("Processor", "% Processor Time", "_Total");
@@ -133,7 +139,7 @@ namespace Vault
             });
             dispatcherTimer.Interval = new TimeSpan(0, 0, 1);
             dispatcherTimer.Start();
-            welcomeGrid.Visibility = Visibility.Visible;
+            versionLabel.Text = "Version " + getRunningVersion();
         }
 
         public struct SettingsModel
@@ -206,6 +212,48 @@ namespace Vault
             public string Duration { get; set; }
             [Category("Metadata"), ReadOnly(true)]
             public string Description { get; set; }
+            public DateTime Created { get; set; }
+            public DateTime Modified { get; set; }
+            public double TrackNumber { get; set; }
+            public double DiscNumber { get; set; }
+
+            public void init(string path)
+            {
+                if (path.EndsWith(".wav") || path.EndsWith(".mp3"))
+                {
+                    var tfile = TagLib.File.Create(path);
+                    string title = tfile.Tag.Title;
+                    if (title == null || title.Length == 0)
+                    {
+                        title = System.IO.Path.GetFileNameWithoutExtension(path);
+                    }
+
+                    string[] artist = new string[1];
+                    if (tfile.Tag.AlbumArtists == null)
+                    {
+                        artist[0] = "N/A";
+                    }
+                    else
+                    {
+                        artist = tfile.Tag.AlbumArtists;
+                    }
+                    FileInfo fi = new FileInfo(path);
+                    var created = fi.CreationTime;
+                    var lastmodified = fi.LastWriteTime;
+                    Title = title;
+                    Artist = String.Join(",", artist);
+                    Album = tfile.Tag.Album;
+                    filePath = path;
+                    Bitrate = (string.Format("{0} Kbps", (int)tfile.Properties.AudioBitrate));
+                    Description = (tfile.Properties.Description);
+                    BPM = (tfile.Tag.BeatsPerMinute);
+                    Duration = (string.Format("{0}:{1:00}", (int)tfile.Properties.Duration.TotalMinutes, tfile.Properties.Duration.Seconds));
+                    Created = created;
+                    Modified = lastmodified;
+                    TrackNumber = tfile.Tag.Track;
+                    DiscNumber = tfile.Tag.Disc;
+                }
+            }
         }
         public struct YoutubeVideoModel
         {
@@ -240,6 +288,8 @@ namespace Vault
             public string Title { get; set; }
             public ObservableCollection<AudioDataModel> Songs { get; set; }
             public string artworkPath { get; set; }
+            public uint TrackCount { get; set; }
+            public uint DiscCount { get; set; }
         }
         public static void SaveBeatPacks()
         {
@@ -285,6 +335,10 @@ namespace Vault
         }
 
         #region Global
+        private void toggleSideMenuBtn_Click(object sender, RoutedEventArgs e)
+        {
+            sideMenuDrawer.IsOpen = !sideMenuDrawer.IsOpen;
+        }
         public void updateTheme()
         {
             accentColorReset.IsEnabled = true;
@@ -344,7 +398,7 @@ namespace Vault
                     System.Windows.Application.Current.Resources["PrimaryBrush"] = primaryColorBrush;
                 }
             }
-            catch (Exception e) { }
+            catch (Exception e) { Console.WriteLine(e.StackTrace); }
         }
         public async void getAlbums()
         {
@@ -356,7 +410,7 @@ namespace Vault
             {
                 AlbumModel newAlbum = new AlbumModel
                 {
-                    Title = s.Substring(s.LastIndexOf("\\")),
+                    Title = "",
                     artworkPath = s + "\\Cover.png",
                     Songs = new ObservableCollection<AudioDataModel>()
                 };
@@ -376,47 +430,29 @@ namespace Vault
                     }));
                     if (files[i].EndsWith(".wav") || files[i].EndsWith(".mp3"))
                     {
-                        var tfile = TagLib.File.Create(files[i]);
-                        string title = tfile.Tag.Title;
-                        if (title == null || title.Length == 0)
-                        {
-                            title = System.IO.Path.GetFileNameWithoutExtension(files[i]);
-                        }
 
-                        string[] artist = new string[1];
-                        if (tfile.Tag.AlbumArtists == null)
-                        {
-                            artist[0] = "N/A";
-                        }
-                        else
-                        {
-                            artist = tfile.Tag.AlbumArtists;
-                        }
-                        AudioDataModel b = new AudioDataModel
-                        {
-                            Title = title,
-                            Artist = String.Join(",", artist),
-                            Album = tfile.Tag.Album,
-                            filePath = files[i],
-                            Bitrate = (string.Format("{0} Kbps", (int)tfile.Properties.AudioBitrate)),
-                            Description = (tfile.Properties.Description),
-                            BPM = (tfile.Tag.BeatsPerMinute),
-                            Duration = (string.Format("{0}:{1:00}", (int)tfile.Properties.Duration.TotalMinutes, tfile.Properties.Duration.Seconds))
-                        };
+                        AudioDataModel b = new AudioDataModel();
+                        b.init(files[i]);
+
                         await Dispatcher.BeginInvoke(new Action(() => {
                             if (!newAlbum.Songs.Contains(b))
                             {
                                 newAlbum.Songs.Add(b);
                             }
                         }));
+                        if (newAlbum.Title == null || newAlbum.Title.Length == 0 && b.Album != null && b.Album.Length != 0)
+                        {
+                            newAlbum.Title = b.Album;
+                            Console.WriteLine(b.Album);
+                        } else
+                        {
+                            Console.WriteLine("No album title for " + b.Title);
+                        }
                     }
                 }
 
-
-
-
                 await Dispatcher.BeginInvoke(new Action(() => {
-                    
+
                     BitmapImage artwork = new BitmapImage();
                     try
                     {
@@ -427,18 +463,22 @@ namespace Vault
                     {
 
                     }
-
-
-                    StackPanel songsPanel = new StackPanel();
-                    foreach (AudioDataModel m in newAlbum.Songs)
+                    StackPanel headerPanel = new StackPanel();
+                    headerPanel.Children.Add(new Image { Source = artwork, Width = 180, Height = 180, HorizontalAlignment = System.Windows.HorizontalAlignment.Left });
+                    headerPanel.Children.Add(new TextBlock { Text = newAlbum.Title, FontWeight = FontWeights.Bold, FontSize = 15 });
+                    albumsView.Items.Remove(albumViewItem);
+                    HandyControl.Controls.CoverViewItem item = new HandyControl.Controls.CoverViewItem
                     {
-                        songsPanel.Children.Add(new TextBlock { Text = m.Title });
-                    }
-                    albumsView.Items.Add(new HandyControl.Controls.CoverViewItem
+                        Header = headerPanel,
+                        Content = albumViewItem
+                    };
+                    item.Selected += delegate
                     {
-                        Header = new Image { Source = artwork },
-                        Content = songsPanel
-                    });
+                        albumViewItemHeader.Content = newAlbum.Title;
+                        albumViewItemList.ItemsSource = newAlbum.Songs;
+                        try { albumViewImage.Source = artwork; } catch (Exception e) { }
+                    };
+                    albumsView.Items.Add(item);
                 }));
             }
 
@@ -476,40 +516,16 @@ namespace Vault
                 //Checks all files and stores all WAV files into the Files list.
                 for (int i = 0; i < files.Length; i++)
                 {
-                    await Dispatcher.BeginInvoke(new Action(() => {
-                        sampleLibraryLoading.Value = i;
-                    }));
-                    if (files[i].EndsWith(".wav") || files[i].EndsWith(".mp3"))
+                    try
                     {
-                        try
+                        await Dispatcher.BeginInvoke(new Action(() => {
+                            sampleLibraryLoading.Value = i;
+                        }));
+                        if (files[i].EndsWith(".wav") || files[i].EndsWith(".mp3"))
                         {
-                            var tfile = TagLib.File.Create(files[i]);
-                            string title = tfile.Tag.Title;
-                            if (title == null || title.Length == 0)
-                            {
-                                title = System.IO.Path.GetFileNameWithoutExtension(files[i]);
-                            }
+                            AudioDataModel b = new AudioDataModel();
+                            b.init(files[i]);
 
-                            string[] artist = new string[1];
-                            if (tfile.Tag.AlbumArtists == null)
-                            {
-                                artist[0] = "N/A";
-                            }
-                            else
-                            {
-                                artist = tfile.Tag.AlbumArtists;
-                            }
-                            AudioDataModel b = new AudioDataModel
-                            {
-                                Title = title,
-                                Artist = String.Join(",", artist),
-                                Album = tfile.Tag.Album,
-                                filePath = files[i],
-                                Bitrate = (string.Format("{0} Kbps", (int)tfile.Properties.AudioBitrate)),
-                                Description = (tfile.Properties.Description),
-                                BPM = (tfile.Tag.BeatsPerMinute),
-                                Duration = (string.Format("{0}:{1:00}", (int)tfile.Properties.Duration.TotalMinutes, tfile.Properties.Duration.Seconds))
-                            };
                             await Dispatcher.BeginInvoke(new Action(() => {
                                 if (!SampleDatas.Contains(b))
                                 {
@@ -517,7 +533,9 @@ namespace Vault
                                 }
                             }));
                         }
-                        catch (Exception ee) { Console.WriteLine("Failed to load sample '" + files[i] + "'"); }
+                    } catch (Exception ee)
+                    {
+                        Console.WriteLine("Could not load sample " + files[i]);
                     }
                 }
             }
@@ -550,34 +568,8 @@ namespace Vault
                     }));
                     if (files[i].EndsWith(".wav") || files[i].EndsWith(".mp3"))
                     {
-                        var tfile = TagLib.File.Create(files[i]);
-                        string title = tfile.Tag.Title;
-                        if (title == null || title.Length == 0)
-                        {
-                            title = System.IO.Path.GetFileNameWithoutExtension(files[i]);
-                        }
-
-                        string[] artist = new string[1];
-                        if (tfile.Tag.AlbumArtists == null)
-                        {
-                            artist[0] = "N/A";
-                        }
-                        else
-                        {
-                            artist = tfile.Tag.AlbumArtists;
-                        }
-                        AudioDataModel b = new AudioDataModel
-                        {
-                            Title = title,
-                            Artist = String.Join(",", artist),
-                            Album = tfile.Tag.Album,
-                            filePath = files[i],
-                            Bitrate = (string.Format("{0} Kbps", (int)tfile.Properties.AudioBitrate)),
-                            Description = (tfile.Properties.Description),
-                            BPM = (tfile.Tag.BeatsPerMinute),
-                            Duration = (string.Format("{0}:{1:00}", (int)tfile.Properties.Duration.TotalMinutes, tfile.Properties.Duration.Seconds))
-                        };
-
+                        AudioDataModel b = new AudioDataModel();
+                        b.init(files[i]);
                         await Dispatcher.BeginInvoke(new Action(() => {
                             if (!BeatDatas.Contains(b))
                             {
@@ -650,12 +642,22 @@ namespace Vault
                     System.Diagnostics.Process.Start("explorer.exe", argument);
                 }
             }
+            else if (albumMenu.IsSelected)
+            {
+                if (albumViewItemList.SelectedItem != null)
+                {
+                    var sample = (AudioDataModel)albumViewItemList.SelectedItem;
+                    string argument = "/select, \"" + sample.filePath + "\"";
+                    System.Diagnostics.Process.Start("explorer.exe", argument);
+                }
+            }
         }
 
         public void playAudioFile(bool manual = false)
         {
             ObservableCollection<AudioDataModel> source = new ObservableCollection<AudioDataModel>();
             if (BeatDatas.Contains(nowPlayingAudio)) { source = BeatDatas; }
+            if (SampleDatas.Contains(nowPlayingAudio)) { source = SampleDatas; }
             if (SampleDatas.Contains(nowPlayingAudio)) { source = SampleDatas; }
 
             if (outputDevice.PlaybackState != PlaybackState.Stopped)
@@ -683,6 +685,8 @@ namespace Vault
 
                 try
                 {
+                    nowPlayingArtwork.Visibility = Visibility.Collapsed;
+                    nowPlayingArtwork.Items.Clear();
                     var tfile = TagLib.File.Create(nowPlayingAudio.filePath);
                     foreach (TagLib.IPicture artwork in tfile.Tag.Pictures)
                     {
@@ -714,44 +718,61 @@ namespace Vault
         }
         private void playBtn_Click(object sender, RoutedEventArgs e)
         {
-            AudioDataModel selectedAudioFile = new AudioDataModel { };
-            if (audioPlayerDrawer.IsOpen)
+            try
             {
-                selectedAudioFile = nowPlayingAudio;
-            } else if (beatLibraryMenu.IsSelected)
-            {
-                if (beatDataTable.SelectedItem == null)
+                AudioDataModel selectedAudioFile = new AudioDataModel { };
+                if (audioPlayerDrawer.IsOpen)
                 {
-                    beatDataTable.SelectedIndex = 0;
+                    selectedAudioFile = nowPlayingAudio;
                 }
-                selectedAudioFile = (AudioDataModel)beatDataTable.SelectedItem;
-            }
-            else if (sampleLibraryMenu.IsSelected)
-            {
-                if (sampleDataTable.SelectedItem == null)
+                else if (beatLibraryMenu.IsSelected)
                 {
-                    sampleDataTable.SelectedIndex = 0;
+                    if (beatDataTable.SelectedItem == null)
+                    {
+                        beatDataTable.SelectedIndex = 0;
+                    }
+                    selectedAudioFile = (AudioDataModel)beatDataTable.SelectedItem;
                 }
-                selectedAudioFile = (AudioDataModel)sampleDataTable.SelectedItem;
+                else if (sampleLibraryMenu.IsSelected)
+                {
+                    if (sampleDataTable.SelectedItem == null)
+                    {
+                        sampleDataTable.SelectedIndex = 0;
+                    }
+                    selectedAudioFile = (AudioDataModel)sampleDataTable.SelectedItem;
+                }
+                else if (albumMenu.IsSelected)
+                {
+                    if (albumViewItemList.SelectedItem == null)
+                    {
+                        albumViewItemList.SelectedIndex = 0;
+                    }
+                    selectedAudioFile = (AudioDataModel)albumViewItemList.SelectedItem;
+                }
+
+                if (nowPlayingAudio.filePath != selectedAudioFile.filePath || outputDevice?.PlaybackState == PlaybackState.Stopped) // if different song than currently loaded, load it
+                {
+                    nowPlayingAudio = selectedAudioFile;
+                    playAudioFile(true);
+                }
+                else
+                {
+                    if (outputDevice?.PlaybackState == PlaybackState.Playing) // play/pause loaded song
+                    {
+                        nowPlayingPlayBtn.SolidIcon = Meziantou.WpfFontAwesome.FontAwesomeSolidIcon.PlayCircle;
+                        outputDevice.Pause();
+                    }
+                    else if (outputDevice?.PlaybackState == PlaybackState.Paused || outputDevice?.PlaybackState == PlaybackState.Stopped)
+                    {
+                        nowPlayingPlayBtn.SolidIcon = Meziantou.WpfFontAwesome.FontAwesomeSolidIcon.PauseCircle;
+                        outputDevice.Play();
+                    }
+                }
+            } catch (Exception er)
+            {
+                HandyControl.Controls.Growl.ErrorGlobal("There was a problem playing the selected audio.\nPlease Try Again!\n\n\nError: " + er.Message);
             }
             
-            if (nowPlayingAudio.filePath != selectedAudioFile.filePath || outputDevice?.PlaybackState == PlaybackState.Stopped) // if different song than currently loaded, load it
-            {
-                nowPlayingAudio = selectedAudioFile;
-                playAudioFile(true);
-            } else
-            {
-                if (outputDevice?.PlaybackState == PlaybackState.Playing) // play/pause loaded song
-                {
-                    nowPlayingPlayBtn.SolidIcon = Meziantou.WpfFontAwesome.FontAwesomeSolidIcon.PlayCircle;
-                    outputDevice.Pause();
-                }
-                else if (outputDevice?.PlaybackState == PlaybackState.Paused || outputDevice?.PlaybackState == PlaybackState.Stopped)
-                {
-                    nowPlayingPlayBtn.SolidIcon = Meziantou.WpfFontAwesome.FontAwesomeSolidIcon.PauseCircle;
-                    outputDevice.Play();
-                }
-            }
         }
         private void saveAudioBtn_Click(object sender, RoutedEventArgs e)
         {
@@ -832,6 +853,13 @@ namespace Vault
                 if (sampleDataTable.SelectedItem != null)
                 {
                     editAudio = (AudioDataModel)sampleDataTable.SelectedItem;
+                }
+            }
+            if (albumMenu.IsSelected)
+            {
+                if (albumViewItemList.SelectedItem != null)
+                {
+                    editAudio = (AudioDataModel)albumViewItemList.SelectedItem;
                 }
             }
 
@@ -1114,7 +1142,8 @@ namespace Vault
                 HandyControl.Controls.Tag t = new HandyControl.Controls.Tag
                 {
                     Content = s,
-                    ShowCloseButton = true
+                    ShowCloseButton = true,
+                    Margin = new Thickness(2)
                 };
                 if (!tagPanel.Items.Contains(t))
                 {
@@ -1382,9 +1411,16 @@ namespace Vault
             }
         }
 
-        private void toggleSideMenuBtn_Click(object sender, RoutedEventArgs e)
+        public static Version getRunningVersion()
         {
-            sideMenuDrawer.IsOpen = !sideMenuDrawer.IsOpen;
+            try
+            {
+                return ApplicationDeployment.CurrentDeployment.CurrentVersion;
+            }
+            catch (Exception)
+            {
+                return Assembly.GetExecutingAssembly().GetName().Version;
+            }
         }
     }
 }
