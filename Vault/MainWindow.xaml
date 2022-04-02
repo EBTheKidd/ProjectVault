@@ -84,6 +84,20 @@
                                     <Button BorderThickness="0" Click="playBtn_Click">
                                         <fa:FontAwesomeIcon SolidIcon="Play" FontSize="15" Foreground="{DynamicResource DarkPrimaryBrush}"/>
                                     </Button>
+                                </hc:UniformSpacingPanel>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+                    <DataGridTextColumn IsReadOnly="True" MaxWidth="300" CanUserResize="False" Binding="{Binding Title}" Header="Title"/>
+                    <DataGridTextColumn IsReadOnly="True" CanUserResize="False" Binding="{Binding BPM}" Header="BPM"/>
+                    <DataGridTextColumn IsReadOnly="True" CanUserResize="False" Binding="{Binding Duration}" Header="Duration" />
+                    <DataGridTextColumn IsReadOnly="True" CanUserResize="False" Binding="{Binding Created}" Header="Created"/>
+                    <DataGridTextColumn IsReadOnly="True" CanUserResize="False" Binding="{Binding Modified}" Header="Last Modified" />
+                    <DataGridTextColumn IsReadOnly="True"  CanUserResize="False" Binding="{Binding Bitrate}" Header="Birtate" />
+                    <DataGridTemplateColumn>
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <hc:UniformSpacingPanel Orientation="Horizontal" Spacing="3">
                                     <Button BorderThickness="0" Click="audioEditBtn_Click">
                                         <fa:FontAwesomeIcon SolidIcon="Edit" FontSize="15" Foreground="{DynamicResource DarkPrimaryBrush}"/>
                                     </Button>
@@ -97,12 +111,6 @@
                             </DataTemplate>
                         </DataGridTemplateColumn.CellTemplate>
                     </DataGridTemplateColumn>
-                    <DataGridTextColumn IsReadOnly="True" MaxWidth="300" CanUserResize="False" Binding="{Binding Title}" Header="Title"/>
-                    <DataGridTextColumn IsReadOnly="True" CanUserResize="False" Binding="{Binding BPM}" Header="BPM"/>
-                    <DataGridTextColumn IsReadOnly="True" CanUserResize="False" Binding="{Binding Duration}" Header="Duration" />
-                    <DataGridTextColumn IsReadOnly="True" CanUserResize="False" Binding="{Binding Created}" Header="Created"/>
-                    <DataGridTextColumn IsReadOnly="True" CanUserResize="False" Binding="{Binding Modified}" Header="Last Modified" />
-                    <DataGridTextColumn IsReadOnly="True"  CanUserResize="False" Binding="{Binding Bitrate}" Header="Birtate" />
                 </DataGrid.Columns>
             </DataGrid>
         </Grid>
@@ -393,11 +401,11 @@
             <Label Content="Settings" Grid.ColumnSpan="2" HorizontalAlignment="Center" FontSize="25" Foreground="{DynamicResource DarkPrimaryBrush}" BorderThickness="0" Background="{x:Null}"/>
             <ScrollViewer Grid.Row="1" Grid.ColumnSpan="2">
                 <hc:UniformSpacingPanel Orientation="Vertical"  Spacing="5" Margin="5">
-                    <Expander Header="Beat/Sample Libraries" BorderThickness="1" BorderBrush="{DynamicResource BorderBrush}" IsExpanded="True" >
+                    <Border Margin="5" BorderThickness="0" CornerRadius="5" Background="{DynamicResource BorderBrush}"  BorderBrush="{DynamicResource BorderBrush}">
                         <hc:UniformSpacingPanel Orientation="Horizontal" Spacing="5" Margin="5">
                             <hc:UniformSpacingPanel Orientation="Vertical" Spacing="5">
-                                <Label Content="Beat Library Folders" Width="200"/>
-                                <ListBox Height="100" x:Name="beatFoldersList">
+                                <Label Content="Beat Library Folders" />
+                                <ListBox Height="100" x:Name="beatFoldersList" Width="320">
                                     <ListBox.ItemTemplate>
                                         <DataTemplate>
                                             <StackPanel Orientation="Horizontal">
@@ -407,13 +415,13 @@
                                     </ListBox.ItemTemplate>
                                 </ListBox>
                                 <hc:UniformSpacingPanel Orientation="Horizontal" Spacing="5">
-                                    <Button Content="Add" Click="addBeatFolder_Click"/>
-                                    <Button Content="Remove" Click="removeBeatFolder_Click"/>
+                                    <Button Content="Add" Click="addBeatFolder_Click" Style="{DynamicResource ButtonPrimary}"/>
+                                    <Button Content="Remove" Click="removeBeatFolder_Click" Style="{DynamicResource ButtonPrimary}"/>
                                 </hc:UniformSpacingPanel>
                             </hc:UniformSpacingPanel>
                             <hc:UniformSpacingPanel Orientation="Vertical" Spacing="5">
-                                <Label Content="Sample Library Folders" Width="200"/>
-                                <ListBox Height="100" x:Name="sampleFoldersList" >
+                                <Label Content="Sample Library Folders"/>
+                                <ListBox Height="100" x:Name="sampleFoldersList" Width="320" >
                                     <ListBox.ItemTemplate>
                                         <DataTemplate>
                                             <StackPanel Orientation="Horizontal">
@@ -423,13 +431,13 @@
                                     </ListBox.ItemTemplate>
                                 </ListBox>
                                 <hc:UniformSpacingPanel Orientation="Horizontal" Spacing="5">
-                                    <Button Content="Add" Click="addSampleFolder_Click"/>
-                                    <Button Content="Remove" Click="removeSampleFolder_Click"/>
+                                    <Button Content="Add" Click="addSampleFolder_Click" Style="{DynamicResource ButtonPrimary}"/>
+                                    <Button Content="Remove" Click="removeSampleFolder_Click" Style="{DynamicResource ButtonPrimary}"/>
                                 </hc:UniformSpacingPanel>
                             </hc:UniformSpacingPanel>
                             <hc:UniformSpacingPanel Orientation="Vertical" Spacing="5">
-                                <Label Content="Album Folders" Width="200"/>
-                                <ListBox Height="100" x:Name="albumFoldersList">
+                                <Label Content="Album Folders" />
+                                <ListBox Height="100" x:Name="albumFoldersList" Width="320">
                                     <ListBox.ItemTemplate>
                                         <DataTemplate>
                                             <StackPanel Orientation="Horizontal">
@@ -439,20 +447,13 @@
                                     </ListBox.ItemTemplate>
                                 </ListBox>
                                 <hc:UniformSpacingPanel Orientation="Horizontal" Spacing="5">
-                                    <Button Content="Add" Click="addAlbumFolder_Click"/>
-                                    <Button Content="Remove" Click="removeAlbumFolder_Click"/>
+                                    <Button Content="Add" Click="addAlbumFolder_Click" Style="{DynamicResource ButtonPrimary}"/>
+                                    <Button Content="Remove" Click="removeAlbumFolder_Click" Style="{DynamicResource ButtonPrimary}"/>
                                 </hc:UniformSpacingPanel>
-                            </hc:UniformSpacingPanel>
-                            <hc:UniformSpacingPanel Orientation="Vertical" Spacing="5">
-                                <hc:UniformSpacingPanel Orientation="Horizontal" Spacing="5" IsEnabled="False">
-                                    <ToggleButton Style="{StaticResource ToggleButtonSwitch}"/>
-                                    <Label Content="Public Sample Library" BorderThickness="0" Background="{x:Null}" />
-                                </hc:UniformSpacingPanel>
-                                <Button Content="Reload Libraries" Click="reloadLibraries_Click"/>
                             </hc:UniformSpacingPanel>
                         </hc:UniformSpacingPanel>
-                    </Expander>
-                    <Expander Header="Style/Theme" BorderThickness="1" BorderBrush="{DynamicResource BorderBrush}" IsExpanded="True">
+                    </Border>
+                    <Border Margin="5" BorderThickness="0" CornerRadius="5" Background="{DynamicResource BorderBrush}"  BorderBrush="{DynamicResource BorderBrush}">
                         <hc:UniformSpacingPanel Orientation="Vertical" Spacing="5" Margin="5">
                             <hc:ButtonGroup >
                                 <RadioButton Content="Light" x:Name="lightThemeBtn" Click="themeBtn_Click" />
@@ -460,34 +461,38 @@
                                 <RadioButton Content="Mica" x:Name="micaThemeBtn" Click="themeBtn_Click" />
                             </hc:ButtonGroup>
                             <hc:UniformSpacingPanel Orientation="Horizontal" Spacing="5">
-                                <Button x:Name="accentColorSelector" Click="accentColorSelector_Click" Content="Change Accent Color" HorizontalAlignment="Left" Width="175" />
+                                <Button x:Name="accentColorSelector" Click="accentColorSelector_Click" Content="Change Accent Color" HorizontalAlignment="Left" Width="175" Style="{DynamicResource ButtonPrimary}"/>
                                 <Button x:Name="accentColorReset" Click="accentColorReset_Click" Content="Reset" HorizontalAlignment="Left" Width="60" Style="{StaticResource ButtonDanger}"/>
                             </hc:UniformSpacingPanel>
                         </hc:UniformSpacingPanel>
-                    </Expander>
+                    </Border>
+                    <Button Content="Reload Libraries" Click="reloadLibraries_Click" Width="150" Style="{DynamicResource ButtonPrimary}" />
                 </hc:UniformSpacingPanel>
             </ScrollViewer>
-            
-            <hc:UniformSpacingPanel Orientation="Vertical" Grid.Row="1" Grid.ColumnSpan="2" Margin="5" VerticalAlignment="Bottom">
+
+            <hc:UniformSpacingPanel Orientation="Vertical" Grid.Row="1"  HorizontalAlignment="Left" VerticalAlignment="Bottom" Margin="10">
                 <StackPanel Orientation="Horizontal" x:Name="beatLoadingPanel">
-                    <ProgressBar x:Name="beatLibraryLoading" Width="300"/>
+                    <ProgressBar x:Name="beatLibraryLoading" Width="150"/>
                     <Label BorderThickness="0" Background="{x:Null}" x:Name="beatLibraryLoadingLabel" Content="Loading Beats..." Foreground="{DynamicResource DarkPrimaryBrush}" />
                 </StackPanel>
                 <StackPanel Orientation="Horizontal" x:Name="sampleLoadingPanel">
-                    <ProgressBar x:Name="sampleLibraryLoading" Width="300"/>
+                    <ProgressBar x:Name="sampleLibraryLoading" Width="150"/>
                     <Label BorderThickness="0" Background="{x:Null}" x:Name="sampleLibraryLoadingLabel" Content="Loading Samples..." Foreground="{DynamicResource DarkPrimaryBrush}" />
                 </StackPanel>
                 <StackPanel Orientation="Horizontal" x:Name="albumLoadingPanel">
-                    <ProgressBar x:Name="albumLibraryLoading" Width="300"/>
+                    <ProgressBar x:Name="albumLibraryLoading" Width="150"/>
                     <Label BorderThickness="0" Background="{x:Null}" x:Name="albumLibraryLoadingLabel" Content="Loading Samples..." Foreground="{DynamicResource DarkPrimaryBrush}" />
                 </StackPanel>
-                <StackPanel Orientation="Horizontal">
-                    <ProgressBar x:Name="ramUsage" Width="300"/>
+            </hc:UniformSpacingPanel>
+
+            <hc:UniformSpacingPanel Orientation="Horizontal" Grid.Row="1" Grid.Column="1" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="10">
+                <StackPanel Orientation="Vertical" >
                     <Label BorderThickness="0" Background="{x:Null}" Content="Detecting Ram Usage..." x:Name="ramUsageLabel" Foreground="{DynamicResource DarkPrimaryBrush}" />
+                    <hc:CircleProgressBar x:Name="ramUsage" />
                 </StackPanel>
-                <StackPanel Orientation="Horizontal" >
-                    <ProgressBar x:Name="cpuUsage" Width="300"/>
+                <StackPanel Orientation="Vertical">
                     <Label BorderThickness="0" Background="{x:Null}" Content="Detecting CPU Usage..." x:Name="cpuUsageLabel" Foreground="{DynamicResource DarkPrimaryBrush}" />
+                    <hc:CircleProgressBar x:Name="cpuUsage" />
                 </StackPanel>
             </hc:UniformSpacingPanel>
         </Grid>
@@ -540,7 +545,7 @@
                         </hc:SideMenuItem>
                         <hc:SideMenuItem Header="Albums" x:Name="albumMenu" >
                             <hc:SideMenuItem.Icon>
-                                <fa:FontAwesomeIcon SolidIcon="Music" FontSize="15" Foreground="{DynamicResource DarkPrimaryBrush}"/>
+                                <fa:FontAwesomeIcon SolidIcon="Folder" FontSize="15" Foreground="{DynamicResource DarkPrimaryBrush}"/>
                             </hc:SideMenuItem.Icon>
                         </hc:SideMenuItem>
                         <hc:SideMenuItem Header="Settings" x:Name="settingsMenu">

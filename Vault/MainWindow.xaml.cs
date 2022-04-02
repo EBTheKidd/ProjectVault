@@ -107,12 +107,10 @@ namespace Vault
                 GetPhysicallyInstalledSystemMemory(out memKb);
                 memKb = (memKb / 1024);
                 ramUsageLabel.Content = "Ram Used: (" + memUsed + " MB /" + memKb + " MB)";
-                ramUsage.Value = int.Parse(memUsed + "");
-                ramUsage.Maximum = memKb;
+                ramUsage.Value = int.Parse(memUsed / memKb + "");
                 var cpuUsed = cpuCounter.NextValue();
                 cpuUsageLabel.Content = "CPU Used: " + Math.Round((cpuUsed / 255) * 100, 5) + "%";
-                cpuUsage.Value = cpuUsed;
-                cpuUsage.Maximum = 255;
+                cpuUsage.Value = (cpuUsed / 255) * 100;
 
                 // now playing
                 string foundBeatTitle = BeatDatas.Where(x => x.filePath.Equals(audioFile?.FileName)).FirstOrDefault().Title;
@@ -443,10 +441,6 @@ namespace Vault
                         if (newAlbum.Title == null || newAlbum.Title.Length == 0 && b.Album != null && b.Album.Length != 0)
                         {
                             newAlbum.Title = b.Album;
-                            Console.WriteLine(b.Album);
-                        } else
-                        {
-                            Console.WriteLine("No album title for " + b.Title);
                         }
                     }
                 }
@@ -657,8 +651,14 @@ namespace Vault
         {
             ObservableCollection<AudioDataModel> source = new ObservableCollection<AudioDataModel>();
             if (BeatDatas.Contains(nowPlayingAudio)) { source = BeatDatas; }
-            if (SampleDatas.Contains(nowPlayingAudio)) { source = SampleDatas; }
-            if (SampleDatas.Contains(nowPlayingAudio)) { source = SampleDatas; }
+            else if (SampleDatas.Contains(nowPlayingAudio)) { source = SampleDatas; }
+            else
+            {
+                foreach (AlbumModel m in AlbumDatas)
+                {
+                    if (m.Songs.Contains(nowPlayingAudio)) { source = m.Songs; }
+                }
+            }
 
             if (outputDevice.PlaybackState != PlaybackState.Stopped)
             {
