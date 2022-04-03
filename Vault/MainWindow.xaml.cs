@@ -3,6 +3,8 @@ using HandyControl.Tools;
 using Microsoft.Win32;
 using NAudio.Wave;
 using Newtonsoft.Json;
+using SpotifyAPI.Web;
+using SpotifyAPI.Web.Auth;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -10,6 +12,7 @@ using System.ComponentModel;
 using System.Deployment.Application;
 using System.Diagnostics;
 using System.IO;
+using System.IO.Compression;
 using System.Linq;
 using System.Net;
 using System.Reflection;
@@ -54,12 +57,18 @@ namespace Vault
         public bool manualAudioSwitch = false;
         private AudioDataModel editAudio;
         public static SettingsModel Settings = SettingsModel.init();
+        public EmbedIOAuthServer _server { get; set; }
+        public string spotifyClientId = Crypto.DecryptStringAES("EAAAAKDNqg3eNQ3DWqafolLi5iiElQEYI4gn+wIJWIb1KiHwuiubooqQCms3Zb1hrgjcJkcS/b2Oo3AzxQfb25AL8Z4=", "ProjectVault");
+        public string spotifyClientSecret = Crypto.DecryptStringAES("EAAAAMybNP9YZ4TaHDgV2fiYZNi6tsRHqX7riLm8Pfy+pd3t2xUk2cfSBPazqvpOld/FPwkZKZcFmjdrdU5HXA5tVN0=", "ProjectVault");
+        public string youtubeApiKey = Crypto.DecryptStringAES("EAAAAPZKTrnasA46U2U1l082aTvvYsyTt3+xH6QUDBxnaKUO6T5gKkrONelw9h7vhrdVpQ+6tUPg6rX3LXqGD6363CQ=", "ProjectVault");
+        public string accessToken { get; set; }
         public static ObservableCollection<AudioDataModel> BeatPackBeatDatas { get; set; } = new ObservableCollection<AudioDataModel>();
         public static ObservableCollection<BeatPackModel> BeatPackDatas { get; set; } = new ObservableCollection<BeatPackModel>();
         public static ObservableCollection<AudioDataModel> BeatDatas { get; set; } = new ObservableCollection<AudioDataModel>();
         public static ObservableCollection<AudioDataModel> SampleDatas { get; set; } = new ObservableCollection<AudioDataModel>();
         public static ObservableCollection<AlbumModel> AlbumDatas { get; set; } = new ObservableCollection<AlbumModel>();
         public static ObservableCollection<YoutubeVideoModel> YoutubeVideoDatas { get; set; } = new ObservableCollection<YoutubeVideoModel>();
+        public static ObservableCollection<SpotifySongModel> SpotifySongDatas { get; set; } = new ObservableCollection<SpotifySongModel>();
         public MainWindow()
         {
             // Initialize Window & Load Settings
@@ -73,19 +82,37 @@ namespace Vault
             };
             WindowChrome.SetWindowChrome(this, chrome);
             InitializeComponent();
-            Settings.Load();
-
+            bool setingsLoaded = Settings.Load();
+            Console.WriteLine("Settings: " + JsonConvert.SerializeObject(Settings));
             // load data
+            if (setingsLoaded)
+            {
+                Task.Run(async () => getBeats());
+                Task.Run(async () => getSamples());
+                Task.Run(async () => getAlbums());
+                LoadBeatPacks();
+                LoadVideoDatas();
+                foreach (string s in Settings.randomFilters)
+                {
+                    HandyControl.Controls.Tag t = new HandyControl.Controls.Tag
+                    {
+                        Content = s,
+                        ShowCloseButton = true,
+                        Margin = new Thickness(2)
+                    };
+                    if (!tagPanel.Items.Contains(t))
+                    {
+                        tagPanel.Items.Add(t);
+                    }
+                }
+                // Load Style/Theme
+            }
             beatFoldersList.ItemsSource = Settings.beatFolders;
             sampleFoldersList.ItemsSource = Settings.sampleFolders;
             albumFoldersList.ItemsSource = Settings.albumFolders;
-            Task.Run(async () => getBeats());
-            Task.Run(async () => getSamples());
-            Task.Run(async () => getAlbums());
-            LoadBeatPacks();
-            LoadVideoDatas();
-
-            // Load Style/Theme
+            toPicker.SelectedDate = DateTime.Now;
+            sampleDownloadDir.Text = Settings.sampleDownloadPath;
+            loadSpotifyGenres(); // this will also trigger login if needed :)
             updateTheme();
 
             // Init audio out
@@ -137,6 +164,7 @@ namespace Vault
             });
             dispatcherTimer.Interval = new TimeSpan(0, 0, 1);
             dispatcherTimer.Start();
+
             versionLabel.Text = "Version " + getRunningVersion();
         }
 
@@ -147,6 +175,10 @@ namespace Vault
             public ObservableCollection<string> albumFolders { get; set; }
             public string Theme { get; set; }
             public System.Drawing.Color AccentColor { get; set; }
+            public List<string> randomFilters { get; set; }
+            public string spotifyAccessToken { get; set; }
+            public string sampleDownloadPath { get; set; }
+
             public void Save()
             {
                 XmlSerializer xs = new XmlSerializer(this.GetType());
@@ -155,7 +187,7 @@ namespace Vault
                     xs.Serialize(wr, this);
                 }
             }
-            public void Load()
+            public bool Load()
             {
                 try
                 {
@@ -163,11 +195,12 @@ namespace Vault
                     using (StreamReader rd = new StreamReader("settings.xml"))
                     {
                         SettingsModel tmp = (SettingsModel) xs.Deserialize(rd);
-                        this.beatFolders = tmp.beatFolders;
-                        this.sampleFolders = tmp.sampleFolders;
-                        this.albumFolders = tmp.albumFolders;
-                        this.Theme = tmp.Theme;
-                        this.AccentColor = tmp.AccentColor;
+                        beatFolders = tmp.beatFolders;
+                        sampleFolders = tmp.sampleFolders;
+                        albumFolders = tmp.albumFolders;
+                        Theme = tmp.Theme;
+                        AccentColor = tmp.AccentColor;
+                        randomFilters = tmp.randomFilters;
                         Console.WriteLine("Settings Loaded");
                     }
                 } catch (Exception ee) { 
@@ -175,9 +208,12 @@ namespace Vault
                     beatFolders = new ObservableCollection<string>();
                     sampleFolders = new ObservableCollection<string>();
                     albumFolders = new ObservableCollection<string>();
-                    Theme = "Dark"; 
+                    Theme = "Dark";
+                    randomFilters = new List<string>();
+                    sampleDownloadPath = GetDownloadsPath();
                     Save();
                 }
+                return true;
             }
 
             public static SettingsModel init()
@@ -186,7 +222,10 @@ namespace Vault
                 {
                     beatFolders = new ObservableCollection<string>(),
                     sampleFolders = new ObservableCollection<string>(),
+                    albumFolders = new ObservableCollection<string>(),
+                    randomFilters = new List<string>(),
                     Theme = "Dark",
+                    sampleDownloadPath = GetDownloadsPath()
                 };
                 return sm;
             }
@@ -258,6 +297,10 @@ namespace Vault
             public string Title { get; set; }
             public string id { get; set; }
             public double rating { get; set; }
+        }
+        public struct SpotifySongModel
+        {
+            public FullTrack track { get; set; }
         }
         public struct BeatPackModel
         {
@@ -458,7 +501,7 @@ namespace Vault
 
                     }
                     StackPanel headerPanel = new StackPanel();
-                    headerPanel.Children.Add(new Image { Source = artwork, Width = 180, Height = 180, HorizontalAlignment = System.Windows.HorizontalAlignment.Left });
+                    headerPanel.Children.Add(new System.Windows.Controls.Image { Source = artwork, Width = 180, Height = 180, HorizontalAlignment = System.Windows.HorizontalAlignment.Left });
                     headerPanel.Children.Add(new TextBlock { Text = newAlbum.Title, FontWeight = FontWeights.Bold, FontSize = 15 });
                     albumsView.Items.Remove(albumViewItem);
                     HandyControl.Controls.CoverViewItem item = new HandyControl.Controls.CoverViewItem
@@ -696,7 +739,7 @@ namespace Vault
                         bitmap.BeginInit();
                         bitmap.StreamSource = ms;
                         bitmap.EndInit();
-                        Image img = new Image()
+                        System.Windows.Controls.Image img = new System.Windows.Controls.Image()
                         {
                             Source = bitmap,
                             Width = 115,
@@ -748,6 +791,14 @@ namespace Vault
                         albumViewItemList.SelectedIndex = 0;
                     }
                     selectedAudioFile = (AudioDataModel)albumViewItemList.SelectedItem;
+                }
+                else if (beatPacksMenu.IsSelected)
+                {
+                    if (beatPackBeatsList.SelectedItem == null)
+                    {
+                        beatPackBeatsList.SelectedIndex = 0;
+                    }
+                    selectedAudioFile = (AudioDataModel)beatPackBeatsList.SelectedItem;
                 }
 
                 if (nowPlayingAudio.filePath != selectedAudioFile.filePath || outputDevice?.PlaybackState == PlaybackState.Stopped) // if different song than currently loaded, load it
@@ -978,10 +1029,8 @@ namespace Vault
                 beatPackTitle.Text = bp.Title;
                 beatPackCost.Value = bp.Cost;
                 BeatPackBeatDatas.Clear();
-                foreach (AudioDataModel m in bp.Beats)
-                {
-                    BeatPackBeatDatas.Add(m);
-                }
+                BeatPackBeatDatas = new ObservableCollection<AudioDataModel>(bp.Beats);
+                beatPackBeatsList.ItemsSource = BeatPackBeatDatas;
                 beatPackRecipientsList.Items.Clear();
                 foreach (string s in bp.EmailRecipients)
                 {
@@ -1028,7 +1077,14 @@ namespace Vault
         }
         private void saveBeatPackZip_Click(object sender, RoutedEventArgs e)
         {
-            //
+            using (ZipArchive zip = ZipFile.Open(GetDownloadsPath() + "/" + beatPackTitle.Text + ".zip", ZipArchiveMode.Create))
+            {
+                foreach (AudioDataModel m in BeatPackBeatDatas)
+                {
+                    zip.CreateEntryFromFile(m.filePath, System.IO.Path.GetFileName(m.filePath));
+                }
+            }
+            HandyControl.Controls.Growl.SuccessGlobal(".zip file created, you can find it in " + GetDownloadsPath());
         }
         private void sendBeatPack_Click(object sender, RoutedEventArgs e)
         {
@@ -1084,6 +1140,154 @@ namespace Vault
         #endregion
         #region Sample Finder
 
+        #region Spotify
+        WasapiLoopbackCapture CaptureInstance = new WasapiLoopbackCapture();
+        private async void startRecordingBtn_Click(object sender, RoutedEventArgs e)
+        {
+            string path = Settings.sampleDownloadPath + "/" + recordingFileName.Text + ".wav";
+            if (!File.Exists(path))
+            {
+                try
+                {
+                    // Redefine the capturer instance with a new instance of the LoopbackCapture class
+                    CaptureInstance = new WasapiLoopbackCapture();
+
+                    // Redefine the audio writer instance with the given configuration
+                    WaveFileWriter RecordedAudioWriter = new WaveFileWriter(path, CaptureInstance.WaveFormat);
+
+                    // When the capturer receives audio, start writing the buffer into the mentioned file
+                    CaptureInstance.DataAvailable += (s, a) =>
+                    {
+                        // Write buffer into the file of the writer instance
+                        RecordedAudioWriter.Write(a.Buffer, 0, a.BytesRecorded);
+                    };
+
+                    // When the Capturer Stops, dispose instances of the capturer and writer
+                    CaptureInstance.RecordingStopped += (s, a) =>
+                    {
+                        RecordedAudioWriter.Dispose();
+                        RecordedAudioWriter = null;
+                        CaptureInstance.Dispose();
+                    };
+
+                    // Start audio recording !
+                    CaptureInstance.StartRecording();
+                }
+                catch (Exception e2) {
+                    Console.WriteLine(e2.Message);
+                    Console.WriteLine(e2.StackTrace);
+                }
+            } else
+            {
+                HandyControl.Controls.Growl.WarningGlobal("This output file name is already in use! Please try something else.");
+            }
+        }
+        private async void stopRecordingBtn_Click(object sender, RoutedEventArgs e)
+        {
+            CaptureInstance.StopRecording();
+        }
+        private async void spotify_playBtn_Click(object sender, RoutedEventArgs e)
+        {
+            if (spotifySongsList.SelectedItem != null)
+            {
+                //string html = "<iframe style='border - radius:12px'  + "?utm_source=generator' width='100%' height='80px' frameBorder='0' allowfullscreen='' allow='autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture'></iframe>";
+                spotifyBrowser.Source = new Uri(("https://open.spotify.com/embed/track/" + ((SpotifySongModel)spotifySongsList.SelectedItem).track.Uri).Replace("spotify:track:", ""));
+                recordingFileName.Text = ((SpotifySongModel)spotifySongsList.SelectedItem).track.Name.Replace(" ", "_");
+                spotifyBrowser.Visibility = Visibility.Visible;
+            }
+        }
+        private async void spotifyRandomSong_Click(object sender, RoutedEventArgs e)
+        {
+            await Dispatcher.BeginInvoke(new Action(() => {
+                spotifyExpander.IsExpanded = false;
+                loadingVideo.Visibility = Visibility.Visible;
+            }));
+            string genre = "";
+            if (searchGenres.SelectedItem != null)
+            {
+                genre = ((string)searchGenres.SelectedItem);
+            }
+            string searchQuerry = "genre: " + genre + " year:" + fromPicker.SelectedDate.Value.Year + "-" + toPicker.SelectedDate.Value.Year;
+            if (hipsterToggle.IsChecked.Value)
+            {
+                searchQuerry += " tag:hipster";
+            }
+            SearchRequest request = new SearchRequest(SearchRequest.Types.Track, searchQuerry);
+            request.Limit = int.Parse(countPicker.Value.ToString());
+            Console.WriteLine(request.Query);
+            Console.WriteLine(JsonConvert.SerializeObject(request));
+            SearchResponse response = await new SpotifyClient(accessToken).Search.Item(request);
+            Console.WriteLine(JsonConvert.SerializeObject(response));
+
+            SpotifySongDatas.Clear();
+            for (int i = 0; i < response.Tracks.Items.Count; i++) {
+                await Dispatcher.BeginInvoke(new Action(() => {
+                    SpotifySongDatas.Add(new SpotifySongModel { track = response.Tracks.Items[i]});
+                }));
+            }
+            await Dispatcher.BeginInvoke(new Action(() => {
+                loadingVideo.Visibility = Visibility.Collapsed;
+            }));
+        }
+        public async Task LoginToSpotify()
+        {
+            // Make sure "http://localhost:5000/callback" is in your spotify application as redirect uri!
+            _server = new EmbedIOAuthServer(new Uri("http://localhost:5000/callback"), 5000);
+            await _server.Start();
+
+            _server.AuthorizationCodeReceived += OnAuthorizationCodeReceived;
+            _server.ErrorReceived += OnErrorReceived;
+
+            var request = new LoginRequest(_server.BaseUri, spotifyClientId, LoginRequest.ResponseType.Code)
+            {
+                Scope = new List<string> { Scopes.UserReadEmail }
+            };
+            spotifyBrowser.Visibility = Visibility.Visible;
+            spotifyBrowser.Source = request.ToUri();
+            //BrowserUtil.Open(request.ToUri());
+        }
+        private async Task OnAuthorizationCodeReceived(object sender, AuthorizationCodeResponse response)
+        {
+            Console.WriteLine("Recieved auth response, stopping server....");
+            await _server.Stop();
+            Console.WriteLine("Server Stopped, parsing response... (Code: " + response.Code + ")");
+            var config = SpotifyClientConfig.CreateDefault();
+            var tokenResponse = await new OAuthClient(config).RequestToken(
+              new AuthorizationCodeTokenRequest(
+                spotifyClientId, spotifyClientSecret, response.Code, new Uri("http://localhost:5000/callback")
+              )
+            );
+
+            Console.WriteLine(JsonConvert.SerializeObject(tokenResponse));
+            accessToken = tokenResponse.AccessToken;
+            Settings.spotifyAccessToken = accessToken;
+            Settings.Save();
+            await loadSpotifyGenres();
+            // do calls with Spotify and save token?
+        }
+        public async Task loadSpotifyGenres()
+        {
+            if (Settings.spotifyAccessToken != null)
+            {
+                RecommendationGenresResponse genres = await new SpotifyClient(Settings.spotifyAccessToken).Browse.GetRecommendationGenres();
+                await Dispatcher.BeginInvoke(new Action(() => {
+                    Console.WriteLine(JsonConvert.SerializeObject(genres));
+                    searchGenres.ItemsSource = new ObservableCollection<string>(genres.Genres);
+                    searchGenres.SelectedIndex = 0;
+                }));
+            } else
+            {
+                await LoginToSpotify();
+            }
+        }
+
+        private async Task OnErrorReceived(object sender, string error, string state)
+        {
+            Console.WriteLine($"Aborting authorization, error received: {error}");
+            await _server.Stop();
+        }
+        #endregion
+        #region Youtube
         private async void nextRandomSample_Click(object sender, RoutedEventArgs e)
         {
             try { ytSampleSelector.SelectedIndex += 1; } catch (Exception eee) { }
@@ -1119,7 +1323,7 @@ namespace Vault
                     {
                         Directory.CreateDirectory("Downloads");
                     }
-                    await youtube.Videos.DownloadAsync("https://youtube.com/watch?v=" + video.id, "Downloads/" + video.Title + ".mp3", o => o.SetFFmpegPath("ffmpeg.exe"));
+                    await youtube.Videos.DownloadAsync("https://youtube.com/watch?v=" + video.id, Settings.sampleDownloadPath + "/" + video.Title + ".mp3", o => o.SetFFmpegPath("ffmpeg.exe"));
                     // https://github.com/ffbinaries/ffbinaries-prebuilt/releases/download/v4.4.1/ffmpeg-4.4.1-win-64.zip
                     loadingVideo.Visibility = Visibility.Hidden;
                     HandyControl.Controls.Growl.SuccessGlobal(video.Title + " has been downloaded!");
@@ -1194,7 +1398,6 @@ namespace Vault
                 try
                 {
                     var count = 50;
-                    var API_KEY = "AIzaSyDY75GZ4FTjiIX6C6Lb-UKQ7Cmvk_67zj4";
                     var q = "";
                     foreach (var t in tagPanel.Items)
                     {
@@ -1202,10 +1405,15 @@ namespace Vault
                         {
                             HandyControl.Controls.Tag tag = (HandyControl.Controls.Tag)t;
                             q += tag.Content.ToString().Replace("|", "%7C") + " ";
+                            if (!Settings.randomFilters.Contains(tag.Content.ToString()))
+                            {
+                                Settings.randomFilters.Add(tag.Content.ToString());
+                            }
                         }
                         catch (Exception eee) { }
                     }
-                    var url = "https://www.googleapis.com/youtube/v3/search?key=" + API_KEY + "&maxResults=" + count + "&part=snippet&videoCategoryId=10&type=video&q=" + q;
+                    Settings.Save();
+                    var url = "https://www.googleapis.com/youtube/v3/search?key=" + youtubeApiKey + "&maxResults=" + count + "&part=snippet&videoCategoryId=10&type=video&q=" + q;
                     string musicUrl = "";
                     bool loadVideo = false;
                     using (WebClient wc = new WebClient())
@@ -1255,6 +1463,7 @@ namespace Vault
                 HandyControl.Controls.Growl.WarningGlobal("Please Enter Some Search Tags!\n\nTip: You can use Youtube API querry parameters!\n('Instrumental|Acoustic' = Instrumental OR Acoustic, '-Jazz' Removes Jazz Results)");
             }
         }
+        #endregion
         #endregion
         #region Settings
         private void accentColorSelector_Click(object sender, RoutedEventArgs e)
@@ -1332,6 +1541,16 @@ namespace Vault
             Task.Run(async () => getBeats());
             Task.Run(async () => getSamples());
             Task.Run(async () => getAlbums());
+        }
+        private async void setSampleDownloadDir_Click(object sender, RoutedEventArgs e)
+        {
+            var dialog = new FolderBrowserDialog();
+            if (dialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)
+            {
+                Settings.sampleDownloadPath = dialog.SelectedPath;
+                sampleDownloadDir.Text = dialog.SelectedPath;
+                Settings.Save();
+            }
         }
         private void saveSettingsBtn_Click(object sender, RoutedEventArgs e)
         {
@@ -1422,5 +1641,23 @@ namespace Vault
                 return Assembly.GetExecutingAssembly().GetName().Version;
             }
         }
+        public static string GetDownloadsPath()
+        {
+            if (Environment.OSVersion.Version.Major < 6) throw new NotSupportedException();
+            IntPtr pathPtr = IntPtr.Zero;
+            try
+            {
+                SHGetKnownFolderPath(ref FolderDownloads, 0, IntPtr.Zero, out pathPtr);
+                return Marshal.PtrToStringUni(pathPtr);
+            }
+            finally
+            {
+                Marshal.FreeCoTaskMem(pathPtr);
+            }
+        }
+
+        private static Guid FolderDownloads = new Guid("374DE290-123F-4565-9164-39C4925E467B");
+        [DllImport("shell32.dll", CharSet = CharSet.Auto)]
+        private static extern int SHGetKnownFolderPath(ref Guid id, int flags, IntPtr token, out IntPtr path);
     }
 }

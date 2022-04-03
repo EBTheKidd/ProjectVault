@@ -187,3 +187,11 @@ C:\Users\eblan\source\repos\ProjectVault\Vault\bin\Release\CliWrap.dll
 C:\Users\eblan\source\repos\ProjectVault\Vault\bin\Release\YoutubeExplode.Converter.dll
 C:\Users\eblan\source\repos\ProjectVault\Vault\bin\Release\CliWrap.xml
 C:\Users\eblan\source\repos\ProjectVault\Vault\bin\Release\YoutubeExplode.Converter.xml
+C:\Users\eblan\source\repos\ProjectVault\Vault\bin\Release\EmbedIO.dll
+C:\Users\eblan\source\repos\ProjectVault\Vault\bin\Release\SpotifyAPI.Web.Auth.dll
+C:\Users\eblan\source\repos\ProjectVault\Vault\bin\Release\SpotifyAPI.Web.dll
+C:\Users\eblan\source\repos\ProjectVault\Vault\bin\Release\Swan.Lite.dll
+C:\Users\eblan\source\repos\ProjectVault\Vault\bin\Release\EmbedIO.xml
+C:\Users\eblan\source\repos\ProjectVault\Vault\bin\Release\SpotifyAPI.Web.xml
+C:\Users\eblan\source\repos\ProjectVault\Vault\bin\Release\SpotifyAPI.Web.Auth.xml
+C:\Users\eblan\source\repos\ProjectVault\Vault\bin\Release\Swan.Lite.xml
