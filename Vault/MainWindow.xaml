@@ -52,8 +52,31 @@
             </Grid.RowDefinitions>
             <Label Content="Vault" Grid.ColumnSpan="2" FontSize="72" Foreground="{DynamicResource DarkPrimaryBrush}" BorderThickness="0" Background="{x:Null}" FontWeight="Bold" FontStyle="Italic" TextOptions.TextFormattingMode="Display"/>
             <hc:UniformSpacingPanel Grid.Row="1" Grid.ColumnSpan="2" Orientation="Vertical" Margin="5" Spacing="5">
-                <Label BorderThickness="0" Background="{x:Null}" Content="You are running a pre-alpha version. This means many features are not fully implemented, and you will probably experience bugs!"/>
+                <Label Content="Closed Alpha" Foreground="{DynamicResource DarkPrimaryBrush}" BorderThickness="0" Background="{x:Null}" Margin="0, -35, 0, 0" FontWeight="Bold" FontStyle="Italic" TextOptions.TextFormattingMode="Display"/>
+                <Label BorderThickness="0" Background="{x:Null}" Content="Vault is in active development, most features are not fully implemented and you will likely experience bugs!!"/>
                 <Label BorderThickness="0" Background="{x:Null}" Content="Please send any and all feedback/bugs to eblank1221@gmail.com"/>
+                <Expander Header="2022 Roadmap" MaxWidth="500">
+                    <ScrollViewer MaxHeight="150">
+                        <hc:UniformSpacingPanel Orientation="Vertical" Spacing="5" >
+                            <Label BorderThickness="0" Background="{x:Null}" Content="--------Q1--------" FontSize="24" FontWeight="Bold" Foreground="{DynamicResource DarkPrimaryBrush}"/>
+                            <Label BorderThickness="0" Background="{x:Null}" Content="Code Cleanup (Organize)"/>
+                            <Label BorderThickness="0" Background="{x:Null}" Content="Better Album Detection and Editing"/>
+                            <Label BorderThickness="0" Background="{x:Null}" Content="Implement Logging and Crash Reports"/>
+                            <Label BorderThickness="0" Background="{x:Null}" Content="--------Q2--------" FontSize="24" FontWeight="Bold" Foreground="{DynamicResource DarkPrimaryBrush}"/>
+                            <Label BorderThickness="0" Background="{x:Null}" Content="Implement Public/Global Sample Library (opt-in)"/>
+                            <Label BorderThickness="0" Background="{x:Null}" Content="Implement Beat Pack sending internally"/>
+                            <Label BorderThickness="0" Background="{x:Null}" Content="Improve Performance and startup time (Multi-Thread)"/>
+                            <Label BorderThickness="0" Background="{x:Null}" Content="--------Q3--------" FontSize="24" FontWeight="Bold" Foreground="{DynamicResource DarkPrimaryBrush}"/>
+                            <Label BorderThickness="0" Background="{x:Null}" Content="Implement Auto-Updates and Download Server/Site"/>
+                            <Label BorderThickness="0" Background="{x:Null}" Content="Begin Phase 1 (Closed Alpha)"/>
+                            <Label BorderThickness="0" Background="{x:Null}" Content="Process Results from Phase 1 (bug fixes, performance improvements, etc...)"/>
+                            <Label BorderThickness="0" Background="{x:Null}" Content="--------Q4--------" FontSize="24" FontWeight="Bold" Foreground="{DynamicResource DarkPrimaryBrush}"/>
+                            <Label BorderThickness="0" Background="{x:Null}" Content="Begin Phase 2 (Open Beta)"/>
+                            <Label BorderThickness="0" Background="{x:Null}" Content="Process Results from Phase 2 (bug fixes, performance improvements, etc...)"/>
+                            <Label BorderThickness="0" Background="{x:Null}" Content="Prepare for v1.0 Release Q1 2023"/>
+                        </hc:UniformSpacingPanel>
+                    </ScrollViewer>
+                </Expander>
             </hc:UniformSpacingPanel>
             <DockPanel Grid.Column="0" Grid.ColumnSpan="2" Grid.Row="2" VerticalAlignment="Center" HorizontalAlignment="Center">
                 <StackPanel Orientation="Vertical" Margin="20" Width="200">
@@ -308,9 +331,7 @@
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate>
                                             <hc:UniformSpacingPanel Orientation="Horizontal" Spacing="3">
-                                                <Button BorderThickness="0" Click="spotify_playBtn_Click">
-                                                    <fa:FontAwesomeIcon SolidIcon="Play" FontSize="15" Foreground="{DynamicResource DarkPrimaryBrush}"/>
-                                                </Button>
+                                                <Button BorderThickness="0" Click="spotify_playBtn_Click" Content="Load" Style="{DynamicResource ButtonPrimary}"/>
                                             </hc:UniformSpacingPanel>
                                         </DataTemplate>
                                     </DataGridTemplateColumn.CellTemplate>
@@ -328,6 +349,7 @@
                                     <DatePicker x:Name="fromPicker" Style="{StaticResource DatePickerExtend}" hc:InfoElement.TitlePlacement="Left" hc:InfoElement.Title="From: " DisplayDate="1970-01-01" DisplayDateStart="1500-01-01" SelectedDate="1970-01-01"/>
                                     <DatePicker x:Name="toPicker" Style="{StaticResource DatePickerExtend}" hc:InfoElement.TitlePlacement="Left" hc:InfoElement.Title="To: " />
                                     <CheckBox x:Name="hipsterToggle" ToolTip="Used to return only albums with the lowest 10% popularity" Content="Hipster"/>
+                                    <hc:NumericUpDown x:Name="offsetPicker" Style="{StaticResource NumericUpDownExtend}" hc:InfoElement.TitlePlacement="Left" hc:InfoElement.Title="Search Offset: " Value="5" ToolTip="The index of the first result to return. Use with # of songs to get the next page of search results."/>
                                     <hc:NumericUpDown x:Name="countPicker" Style="{StaticResource NumericUpDownExtend}" hc:InfoElement.TitlePlacement="Left" hc:InfoElement.Title="# of songs: " Value="20"/>
                                     <Button Content="Search" Click="spotifyRandomSong_Click" Style="{DynamicResource ButtonPrimary}" Margin="25"/>
                                 </hc:UniformSpacingPanel>

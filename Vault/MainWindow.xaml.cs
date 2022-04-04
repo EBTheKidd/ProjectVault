@@ -522,7 +522,7 @@ namespace Vault
 
             await Dispatcher.BeginInvoke(new Action(() => {
                 albumLoadingPanel.Visibility = Visibility.Collapsed;
-                if (albumsView.Items.Count == 0)
+                if (Settings.albumFolders.Count == 0)
                 {
                     albumMenu.Visibility = Visibility.Collapsed;
                 }
@@ -1208,31 +1208,42 @@ namespace Vault
         private async void spotifyRandomSong_Click(object sender, RoutedEventArgs e)
         {
             await Dispatcher.BeginInvoke(new Action(() => {
-                spotifyExpander.IsExpanded = false;
                 loadingVideo.Visibility = Visibility.Visible;
             }));
-            string genre = "";
-            if (searchGenres.SelectedItem != null)
+            try
             {
-                genre = ((string)searchGenres.SelectedItem);
-            }
-            string searchQuerry = "genre: " + genre + " year:" + fromPicker.SelectedDate.Value.Year + "-" + toPicker.SelectedDate.Value.Year;
-            if (hipsterToggle.IsChecked.Value)
-            {
-                searchQuerry += " tag:hipster";
-            }
-            SearchRequest request = new SearchRequest(SearchRequest.Types.Track, searchQuerry);
-            request.Limit = int.Parse(countPicker.Value.ToString());
-            Console.WriteLine(request.Query);
-            Console.WriteLine(JsonConvert.SerializeObject(request));
-            SearchResponse response = await new SpotifyClient(accessToken).Search.Item(request);
-            Console.WriteLine(JsonConvert.SerializeObject(response));
+                string genre = "";
+                if (searchGenres.SelectedItem != null)
+                {
+                    genre = ((string)searchGenres.SelectedItem);
+                }
+                string searchQuerry = "genre: " + genre + " year:" + fromPicker.SelectedDate.Value.Year + "-" + toPicker.SelectedDate.Value.Year;
+                if (hipsterToggle.IsChecked.Value)
+                {
+                    searchQuerry += " tag:hipster";
+                }
 
-            SpotifySongDatas.Clear();
-            for (int i = 0; i < response.Tracks.Items.Count; i++) {
+                SearchRequest request = new SearchRequest(SearchRequest.Types.Track, searchQuerry);
+                request.Limit = int.Parse(countPicker.Value.ToString());
+                request.Offset = int.Parse(offsetPicker.Value.ToString());
+                Console.WriteLine(request.Query);
+                Console.WriteLine(JsonConvert.SerializeObject(request));
+                SearchResponse response = await new SpotifyClient(accessToken).Search.Item(request);
+                Console.WriteLine(JsonConvert.SerializeObject(response));
+
+                SpotifySongDatas.Clear();
+                for (int i = 0; i < response.Tracks.Items.Count; i++)
+                {
+                    await Dispatcher.BeginInvoke(new Action(() => {
+                        SpotifySongDatas.Add(new SpotifySongModel { track = response.Tracks.Items[i] });
+                    }));
+                }
                 await Dispatcher.BeginInvoke(new Action(() => {
-                    SpotifySongDatas.Add(new SpotifySongModel { track = response.Tracks.Items[i]});
+                    spotifyExpander.IsExpanded = false;
                 }));
+            } catch (Exception ee)
+            {
+                HandyControl.Controls.Growl.WarningGlobal("An error has occured while grabbing random Spotify songs... Are you sure you are logged in?");
             }
             await Dispatcher.BeginInvoke(new Action(() => {
                 loadingVideo.Visibility = Visibility.Collapsed;
