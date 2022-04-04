@@ -417,7 +417,7 @@
                             </Grid.RowDefinitions>
                             <Label x:Name="albumViewItemHeader" Grid.Column="0" Grid.Row="0" BorderThickness="0" Foreground="{DynamicResource DarkPrimaryBrush}" Padding="5,0,0,0" FontSize="16" FontWeight="Bold"/>
 
-                            <DataGrid Grid.Column="0" Grid.Row="1" Background="{x:Null}" Grid.ColumnSpan="2" x:Name="albumViewItemList" HeadersVisibility="None" hc:DataGridAttach.ShowRowNumber="True" RowHeaderWidth="60" ColumnHeaderHeight="30" AutoGenerateColumns="False" ItemsSource="{Binding BeatDatas, UpdateSourceTrigger=Default, RelativeSource={RelativeSource AncestorType=Window}}" HorizontalScrollBarVisibility="Hidden" SelectionMode="Single">
+                            <DataGrid Grid.Column="0" Grid.Row="1" Background="{x:Null}" Grid.ColumnSpan="2" x:Name="albumViewItemList" HeadersVisibility="None" hc:DataGridAttach.ShowRowNumber="True" RowHeaderWidth="60" ColumnHeaderHeight="30" AutoGenerateColumns="False" HorizontalScrollBarVisibility="Hidden" SelectionMode="Single">
                                 <DataGrid.RowHeaderTemplate>
                                     <DataTemplate>
                                         <CheckBox IsChecked="{Binding IsSelected,RelativeSource={RelativeSource AncestorType=DataGridRow}}"/>
@@ -526,7 +526,7 @@
                             </hc:UniformSpacingPanel>
                         </hc:UniformSpacingPanel>
                     </Border>
-
+                    <Button Content="Reload Libraries" Click="reloadLibraries_Click" Margin="5" Style="{DynamicResource ButtonPrimary}" />
                     <hc:UniformSpacingPanel Orientation="Horizontal" Spacing="5" >
                         <Border Margin="5" BorderThickness="0" CornerRadius="5" Background="{DynamicResource BorderBrush}"  BorderBrush="{DynamicResource BorderBrush}">
                             <hc:UniformSpacingPanel Orientation="Vertical" Spacing="5" Margin="5">
@@ -549,7 +549,6 @@
                             </hc:UniformSpacingPanel>
                         </Border>
                     </hc:UniformSpacingPanel>
-                    <Button Content="Reload Libraries" Click="reloadLibraries_Click" Width="150" Style="{DynamicResource ButtonPrimary}" />
 
                 </hc:UniformSpacingPanel>
             </ScrollViewer>

@@ -201,6 +201,7 @@ namespace Vault
                         Theme = tmp.Theme;
                         AccentColor = tmp.AccentColor;
                         randomFilters = tmp.randomFilters;
+                        sampleDownloadPath = tmp.sampleDownloadPath;
                         Console.WriteLine("Settings Loaded");
                     }
                 } catch (Exception ee) { 
@@ -521,6 +522,14 @@ namespace Vault
 
             await Dispatcher.BeginInvoke(new Action(() => {
                 albumLoadingPanel.Visibility = Visibility.Collapsed;
+                if (albumsView.Items.Count == 0)
+                {
+                    albumMenu.Visibility = Visibility.Collapsed;
+                }
+                else
+                {
+                    albumMenu.Visibility = Visibility.Visible;
+                }
             }));
         }
         public async void getSamples()
@@ -1585,7 +1594,7 @@ namespace Vault
         }
         private void removeAlbumFolder_Click(object sender, RoutedEventArgs e)
         {
-            if (sampleFoldersList.SelectedItem != null)
+            if (albumFoldersList.SelectedItem != null)
             {
                 Settings.albumFolders.Remove((string)albumFoldersList.SelectedItem);
                 Settings.Save();
